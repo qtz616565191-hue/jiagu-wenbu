@@ -14,3 +14,24 @@ nul
 Thumbs.db
 .DS_Store
 *.tmp
+
+# 字形审查/水印分析一次性脚本与中间产物
+aggregate-wm.js
+analyze-wm.js
+analyze-wm2.js
+audit-ming-he.html
+audit-zoom.html
+build-lishu-sheet.js
+cdp-dump.js
+check-progress.js
+collect-lishu.js
+cut-test.js
+dbg-wm.js
+glyph-audit.html
+lishu-sheet.html
+make-audit2.js
+make-audit3.js
+process-lishu.js
+wm-analysis.json
+wm-template-raw.json
+wm-test.gif

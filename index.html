@@ -10,9 +10,11 @@
 <div id="app">
 
   <!-- 首页 · 双门户 -->
-  <section class="screen active" id="s-home">
+  <section class="screen active intro" id="s-home">
+    <span class="intro-skip" id="intro-skip">跳过</span>
     <div class="home-art">
-      <img src="img/hero.jpg" alt="玄鸟与龟甲">
+      <img class="hero-layer l-ground" src="img/hero.jpg" alt="">
+      <img class="hero-layer l-bird" src="img/hero.jpg" alt="玄鸟">
     </div>
     <div class="home-body">
       <div class="htitle">甲骨问卜</div>
@@ -101,11 +103,13 @@
       <span class="tk tl"></span><span class="tk tr"></span>
       <span class="tk bl"></span><span class="tk br"></span>
       <div class="glyph-slot" id="q-glyph-slot"></div>
+      <span class="kaishu" id="q-kaishu"></span>
       <svg class="crack" viewBox="0 0 200 200" preserveAspectRatio="none">
         <path d="M100 8 L92 52 L108 86 L88 120 L104 158 L96 194"/>
         <path d="M92 52 L60 66 M108 86 L146 74 M88 120 L58 134 M104 158 L140 172"/>
       </svg>
     </div>
+    <div class="q-tip" id="q-tip"></div>
     <div class="opts" id="q-opts"></div>
   </section>
 
@@ -131,7 +135,7 @@
       <span></span>
     </div>
     <div class="evo-stage" id="evo-stage">
-      <div class="evo-glyph" id="evo-glyph"></div>
+      <div class="evo-carousel" id="evo-carousel"></div>
       <div class="evo-char-name">「<span id="evo-char"></span>」字之变</div>
     </div>
     <div class="evo-note" id="evo-note"></div>
@@ -164,6 +168,15 @@
         <button class="btn hair" id="btn-evo">观字形之变</button>
         <button class="btn ink" id="btn-next">继续</button>
       </div>
+    </div>
+  </div>
+
+  <!-- 字鉴收藏卡预览（长按图片保存） -->
+  <div class="card-mask" id="card-mask">
+    <div class="card-preview">
+      <p class="card-hint">长按图片，保存字鉴</p>
+      <a id="card-link" download="甲骨问卜-字鉴.jpg"><img id="card-img" alt="识字字鉴"></a>
+      <span class="card-close" id="card-close">收起</span>
     </div>
   </div>
 

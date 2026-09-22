@@ -7,9 +7,12 @@
   let evoIdx = 0; // 观变当前阶段
   let rubChar = null, rubDone = false, rubWrong = false;
   let order = []; // 每局随机后的题目下标序列
+  let wrongSet = new Set(); // 本局答错（含先错后对）的 QUESTIONS 下标
+  let wrongTimer = null; // 答错裂纹/提示的清除计时
 
   // 拓印插入点：答完第 4、9 题后，拓印刚答对的那个字（12 题版节奏）
   const RUB_AFTER = { 3: true, 8: true };
+  const RUB_DONE_PCT = 0.55;   // 露出过此比例即视为拓成
 
   // Fisher–Yates 洗牌
   function shuffle(arr) {
@@ -61,6 +64,7 @@
     correct() { tone(523.25, 0.16, 'sine', 0.16); tone(783.99, 0.3, 'sine', 0.14, 0.1); }, // 磬：C5→G5
     wrong() { tone(150, 0.22, 'triangle', 0.16, 0, 90); },                                  // 低鼓
     crack() { noise(0.28, 0.1, 1600); },
+    kah() { noise(0.07, 0.14, 1800); tone(220, 0.07, 'triangle', 0.1, 0, 120); },   // 咔：短噪+低沉裂响
     open() { tone(392, 0.1, 'sine', 0.08); tone(587.33, 0.16, 'sine', 0.08, 0.07); },
     rub() { noise(0.06, 0.035, 2600); },
   };
@@ -70,6 +74,7 @@
 
   function start() {
     idx = 0; score = 0; fromRub = false;
+    wrongSet = new Set();
     const all = QUESTIONS.map((_, i) => i);
     const easyIdx = all.filter(i => EASY_FIRST.includes(QUESTIONS[i].char));
     const first = easyIdx[Math.floor(Math.random() * easyIdx.length)];
@@ -88,6 +93,10 @@
 
     const card = $('q-glyph');
     card.className = 'glyph-card';
+    clearTimeout(wrongTimer);
+    $('q-tip').className = 'q-tip';
+    $('q-tip').textContent = '';
+    $('q-kaishu').textContent = q.answer;
     $('q-glyph-slot').innerHTML = q.glyph;
 
     const box = $('q-opts');
@@ -102,21 +111,34 @@
     });
   }
 
+  // 答错反馈：裂纹骤现 + “龟灵未显，再试”，0.8s 内净尽；连错时强制重启动画
+  function flashWrong() {
+    const card = $('q-glyph'), tip = $('q-tip');
+    card.classList.remove('wrong');
+    tip.classList.remove('show');
+    void card.offsetWidth;   // 强制 reflow，保证连续答错也能重播
+    card.classList.add('wrong');
+    tip.textContent = '龟灵未显，再试';
+    tip.classList.add('show');
+    SFX.kah();
+    clearTimeout(wrongTimer);
+    wrongTimer = setTimeout(() => card.classList.remove('wrong'), 850);
+  }
+
   function choose(btn, opt, q) {
     if (btn.classList.contains('lock')) return;
     if (opt === q.answer) {
       if (!wrongTouched) score++;
       btn.classList.add('right');
       [...document.querySelectorAll('.opt')].forEach(b => b.classList.add('lock'));
-      $('q-glyph').classList.add('correct');
-      SFX.correct(); SFX.crack();
-      setTimeout(openExplain, 600);
+      $('q-glyph').classList.add('correct', 'morph');
+      SFX.correct();   // 磬声“叮”
+      setTimeout(openExplain, 1500);
     } else {
       wrongTouched = true;
+      wrongSet.add(order[idx]);
       btn.classList.add('bad', 'lock');
-      $('q-glyph').classList.add('wrong');
-      SFX.wrong();
-      setTimeout(() => $('q-glyph').classList.remove('wrong'), 400);
+      flashWrong();
     }
   }
 
@@ -170,7 +192,7 @@
     ctx.fillRect(0, 0, w, h);
     ctx.globalCompositeOperation = 'destination-out';
 
-    let drawing = false, last = null;
+    let drawing = false, last = null, lastVib = 0;
     const pos = e => { const r = cv.getBoundingClientRect();
       return { x: e.clientX - r.left, y: e.clientY - r.top }; };
     function start(e) { if (rubDone) return; drawing = true; last = pos(e);
@@ -179,8 +201,12 @@
       if (!drawing || rubDone) return;
       const p = pos(e);
       ctx.lineWidth = 36; ctx.lineCap = 'round'; ctx.lineJoin = 'round';
-      ctx.beginPath(); ctx.moveTo(last.x, last.y); ctx.lineTo(p.x, p.y); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(last.x, last.y);
+      ctx.lineTo(p.x, p.y); ctx.stroke();
       last = p;
+      // 轻震反馈：180ms 节流，不支持 vibrate 的设备静默失败
+      const now = performance.now();
+      if (now - lastVib > 180) { if (navigator.vibrate) navigator.vibrate(10); lastVib = now; }
       SFX.rub(); checkReveal(w, h, dpr);
       e.preventDefault();
     }
@@ -202,8 +228,10 @@
         if (data[(y * dpr * w * dpr + x * dpr) * 4 + 3] < 40) cleared++;
       }
     const pct = cleared / total;
-    if (pct > 0.12) $('rub-hint').textContent = `拓印中… ${Math.min(99, Math.round(pct * 130))}%`;
-    if (pct >= 0.55 && !rubDone) revealRub();
+    // 前 50% 露出：进度缓爬（0→45%）；越过 50%：进度陡涨（45→100%），越拓越顺
+    const shown = pct <= .5 ? pct * 90 : 45 + (pct - .5) / (RUB_DONE_PCT - .5) * 55;
+    if (pct > 0.05) $('rub-hint').textContent = `拓印中… ${Math.min(99, Math.round(shown))}%`;
+    if (pct >= RUB_DONE_PCT && !rubDone) revealRub();
   }
 
   function revealRub() {
@@ -216,7 +244,8 @@
       ctx.clearRect(0, 0, cv.width, cv.height);
     }, 520);
     $('rub-hint').textContent = '字形已显——此为何字？';
-    SFX.crack();
+    if (navigator.vibrate) navigator.vibrate(50);   // 定格强震
+    SFX.kah();                                      // 咔
     setTimeout(() => {
       const box = $('rub-opts');
       box.style.display = 'grid';
@@ -233,7 +262,9 @@
             SFX.correct();
             setTimeout(() => openExplain('拓得此字'), 400);
           } else {
-            rubWrong = true; b.classList.add('bad', 'lock'); SFX.wrong();
+            rubWrong = true;
+            wrongSet.add(QUESTIONS.indexOf(curQ));
+            b.classList.add('bad', 'lock'); SFX.wrong();
           }
         };
         box.appendChild(b);
@@ -241,29 +272,48 @@
     }, 420);
   }
 
-  /* ---------- 观变 ---------- */
+  /* ---------- 观变：横向字源轮播（cover-flow） ---------- */
+  const EVO_X = 126;   // 相邻阶段槽位的横移量（px）
   function openEvo() {
     closeExplain();
     evoIdx = 0;
     show('s-evo');
-    renderEvo(true);
+    buildEvoCells();
+    layoutEvo();
     SFX.open();
   }
   function evoCell(q, i) {
     const f = q.evolution[i];
-    return f.type === 'svg'
-      ? f.html
-      : `<span class="txt ${f.cls}">${f.text}</span>`;
+    if (f.type === 'svg') return f.html;
+    if (f.type === 'lishu') return `<img class="li-glyph" src="${f.src}" alt="汉隶">`;
+    return `<span class="txt ${f.cls}">${f.text}</span>`;
   }
-  function renderEvo(first) {
-    const q = curQ;
-    const g = $('evo-glyph');
-    if (!first) g.innerHTML = ''; // 触发动画重放
-    void g.offsetWidth;
-    g.innerHTML = evoCell(q, evoIdx);
+  // 每个字只建一次五格；位置/缩放/透明度全由 CSS 变量驱动
+  function buildEvoCells() {
+    const c = $('evo-carousel');
+    c.classList.remove('ready');
+    c.innerHTML = curQ.evolution.map((_, i) =>
+      `<div class="evo-cell" data-i="${i}"><div class="cell-box">${evoCell(curQ, i)}</div></div>`
+    ).join('');
+    $('evo-char').textContent = curQ.char;
+    requestAnimationFrame(() => requestAnimationFrame(() => c.classList.add('ready')));
+  }
+  function layoutEvo() {
+    document.querySelectorAll('.evo-cell').forEach(el => {
+      const d = +el.dataset.i - evoIdx;
+      el.style.opacity = d === 0 ? 1 : Math.abs(d) === 1 ? .3 : 0;
+      el.style.zIndex = 3 - Math.min(Math.abs(d), 2);
+      el.firstElementChild.style.setProperty('--x', d * EVO_X + 'px');
+      el.firstElementChild.style.setProperty('--s', d === 0 ? 1 : .7);
+    });
     $('evo-era').textContent = EVO_LABELS[evoIdx];
-    $('evo-char').textContent = q.char;
-    $('evo-note').textContent = EVO_NOTES[evoIdx];
+    const note = $('evo-note'), f3 = curQ.evolution[3];
+    note.textContent = evoIdx === 3
+      ? `汉·隶书（${f3.src2}）：${f3.kind === 'gu'
+        ? '由篆入隶，书写简率，波磔初生，古今文字的分水岭。'
+        : '方折波磔，字形趋扁，古今文字的分水岭。'}`
+      : EVO_NOTES[evoIdx];
+    note.classList.remove('flash'); void note.offsetWidth; note.classList.add('flash');
     document.querySelectorAll('.evo-node').forEach((n, i) =>
       n.classList.toggle('on', i === evoIdx));
   }
@@ -271,29 +321,31 @@
     const next = evoIdx + step;
     if (next < 0 || next > 4) return;
     evoIdx = next;
-    renderEvo();
+    layoutEvo();
   }
   function buildRail() {
     $('evo-rail').innerHTML = EVO_LABELS.map((l, i) =>
       `<div class="evo-node" data-i="${i}"><i>${i + 1}</i><span>${l.replace(/^.+·/, '')}</span></div>`
     ).join('');
     $('evo-rail').querySelectorAll('.evo-node').forEach(n =>
-      n.onclick = () => { evoIdx = +n.dataset.i; renderEvo(); SFX.open(); });
+      n.onclick = () => { evoIdx = +n.dataset.i; layoutEvo(); SFX.open(); });
   }
-  // 滑动手势（移动端左右滑；桌面端点左右半屏）
+  // 左右滑动切换（pointer 事件统一触屏/鼠标；轻点左右半屏亦可前进/后退）
   (function bindSwipe() {
-    let x = 0, swipedAt = 0;
-    const stage = $('evo-stage');
-    stage.addEventListener('touchstart', e => x = e.touches[0].clientX, { passive: true });
-    stage.addEventListener('touchend', e => {
-      const dx = e.changedTouches[0].clientX - x;
-      if (Math.abs(dx) > 44) { evoGo(dx < 0 ? 1 : -1); swipedAt = Date.now(); }
-    }, { passive: true });
-    stage.onclick = (e) => {
-      if (Date.now() - swipedAt < 600) return; // 吞掉滑动后的合成 click
-      const r = stage.getBoundingClientRect();
-      evoGo(e.clientX > r.left + r.width / 2 ? 1 : -1);
-    };
+    const el = $('evo-carousel');
+    let sx = 0, t0 = 0, down = false;
+    el.addEventListener('pointerdown', e => { down = true; sx = e.clientX; t0 = Date.now(); });
+    el.addEventListener('pointerup', e => {
+      if (!down) return;
+      down = false;
+      const dx = e.clientX - sx;
+      if (Math.abs(dx) > 40) evoGo(dx < 0 ? 1 : -1);
+      else if (Date.now() - t0 < 260) {
+        const r = el.getBoundingClientRect();
+        evoGo(e.clientX > r.left + r.width / 2 ? 1 : -1);
+      }
+    });
+    el.addEventListener('pointercancel', () => down = false);
   })();
 
   function afterEvo() { onContinue(); }
@@ -341,9 +393,41 @@
 
   buildRail();
 
+  // 首页开场：.intro 在 HTML 初载即挂上，2.5s 后或点“跳过”即撤
+  (function homeIntro() {
+    const home = $('s-home');
+    if (!home.classList.contains('intro')) return;
+    let done = false, timer = null;
+    const finish = () => {
+      if (done) return;
+      done = true;
+      clearTimeout(timer);
+      home.classList.remove('intro');
+    };
+    $('intro-skip').onclick = finish;
+    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) { finish(); return; }
+    timer = setTimeout(finish, 2500);
+  })();
+
   // 供 divine.js 复用
   window.SFX = SFX;
   window.startQuiz = start;
+  // 字鉴收藏卡数据：按本局答题顺序，{char, glyph(SVG 串), ok}
+  window.quizRecord = () => order.map(qi =>
+    ({ char: QUESTIONS[qi].char, glyph: QUESTIONS[qi].glyph, ok: !wrongSet.has(qi) }));
+  // CDP 测试钩子：直接开某字某阶段（0甲骨…4楷书）的观变页
+  window.__evoTest = (ch, stage) => {
+    curQ = QUESTIONS.find(q => q.char === ch);
+    openEvo();
+    evoIdx = stage;
+    layoutEvo();
+  };
+  // CDP 测试钩子：构造 nWrong 题答错（本局前 nWrong 题）、得分为 scoreVal 的终局
+  window.__quizTest = (nWrong, scoreVal) => {
+    score = scoreVal;
+    wrongSet = new Set(order.slice(0, nWrong));
+    result();
+  };
 
   // 首次任意触摸即解锁音频（微信/iOS 策略）
   document.addEventListener('pointerdown', () => SFX.unlock(), { once: true, passive: true });
@@ -355,7 +439,7 @@
   if (location.hash.startsWith('#evo')) {
     start();
     setTimeout(() => { openEvo(); const n = parseInt(location.hash.split('-')[1], 10);
-      if (n >= 2 && n <= 5) { evoIdx = n - 1; renderEvo(); } }, 100);
+      if (n >= 2 && n <= 5) { evoIdx = n - 1; layoutEvo(); } }, 100);
   }
   if (location.hash === '#rub') { start(); idx = 3; setTimeout(() => openRub(curQ && curQ.char || '日'), 100); }
 })();

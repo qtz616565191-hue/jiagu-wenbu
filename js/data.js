@@ -23,22 +23,37 @@ const QUESTIONS = [
   { char: '休', options: ['休', '木', '体', '依'], answer: '休',
     explain: '人倚在大树之旁，便是歇息——把两个象形符号拼出新义的会意字。' },
   { char: '明', options: ['明', '晶', '朋', '照'], answer: '明',
-    explain: '日月相照为"明"：以日与月两个字形相合，会意出抽象的光亮。' },
+    explain: '古多作"朙"：左"囧"像窗棂，右为月，月光透窗而入，会意明亮；后世或从日，写作"明"。' },
   { char: '河', options: ['河', '水', '江', '海'], answer: '河',
-    explain: '从"水"、"可"声，本专指黄河——殷人所居洹河汇入之处，殷人亦以"河"为河神之名。' },
+    explain: '甲骨文或借"何"（人荷担之形）为声，后加水旁；金文声符增口作"可"，小篆遂为从水、可声。本专指黄河，殷人亦以"河"为河神之名。' },
 ];
 
 // 五阶段标签
 const EVO_LABELS = ['商·甲骨', '周·金文', '秦·小篆', '汉·隶书', '今·楷书'];
 
-// 字形装配：甲骨/金文/小篆用真实实例 SVG；隶书/楷书用字体排印
+// 隶书出处（每字遴选汉代真迹一件：汉碑拓本 / 马王堆西汉帛书）
+const LISHU_SRC = {
+  '日': '衡方碑', '月': '曹全碑', '山': '居延汉简', '水': '曹全碑',
+  '雨': '曹全碑', '目': '马王堆帛书', '家': '马王堆帛书', '马': '曹全碑',
+  '鹿': '袁博碑', '休': '马王堆帛书', '明': '马王堆帛书', '河': '马王堆帛书',
+};
+
+// 隶书类型：stele 东汉成熟八分碑刻；gu 西汉古隶（帛书/汉简，由篆入隶）
+const LISHU_KIND = {
+  '日': 'stele', '月': 'stele', '山': 'gu', '水': 'stele', '雨': 'stele',
+  '目': 'gu', '家': 'gu', '马': 'stele', '鹿': 'stele',
+  '休': 'gu', '明': 'gu', '河': 'gu',
+};
+
+// 字形装配：甲骨/金文/小篆/隶书皆为真实器物实例（SVG 拓本 / 汉隶 GIF 拓本）；
+// 仅楷书用现代字体排印（古今对照的"今"）
 QUESTIONS.forEach(q => {
   q.glyph = GLYPHS_JIAGU[q.char];
   q.evolution = [
     { type: 'svg', html: GLYPHS_JIAGU[q.char] },
     { type: 'svg', html: GLYPHS_JINWEN[q.char] },
     { type: 'svg', html: GLYPHS_XIAOZHUAN[q.char] },
-    { type: 'text', text: q.char, cls: 'li' },   // 隶书
+    { type: 'lishu', src: 'img/lishu/' + q.char + '.png', src2: LISHU_SRC[q.char], kind: LISHU_KIND[q.char] },
     { type: 'text', text: q.char, cls: 'kai' },  // 楷书
   ];
 });

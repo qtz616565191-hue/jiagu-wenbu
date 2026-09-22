@@ -85,17 +85,82 @@
   function crackMarkup(lines, mode) {
     if (mode === 'burn') {
       return lines.map((l, i) => {
-        const d = pathD(l), w = i * 95;
+        const d = pathD(l), w = i * 110;   // 主纹先出，枝纹逐条错峰
         return `<path d="${d}" class="hc hc-glow draw" style="animation-delay:${w}ms"/>` +
-          `<path d="${d}" class="hc hc-mid draw" style="animation-delay:${w + 70}ms"/>` +
-          `<path d="${d}" class="hc hc-core draw" style="animation-delay:${w + 150}ms"/>`;
+          `<path d="${d}" class="hc hc-mid draw" style="animation-delay:${w + 80}ms"/>` +
+          `<path d="${d}" class="hc hc-core draw" style="animation-delay:${w + 160}ms"/>`;
       }).join('');
     }
     return lines.map(l => `<path d="${pathD(l)}"/>`).join('');
   }
 
-  /* ---------- 占辞（只释兆纹与行止态度，无具体预言） ---------- */
+  /* ---------- 占辞（按事类分池；只释兆纹与行止态度，无具体预言）
+     统一句法：前半写兆纹形态，后半只给态度——可往/可为/可见/可决，
+     或宜缓/宜止/再卜；不预断成败，不涉灾祥 ---------- */
   const TEXTS = {
+    '出行': {
+      '吉': [
+        '兆纹顺达，末锐而敛——可行，宜及早启途，毋事逗留。',
+        '其纹长直，枝短不牵——往则合宜，水陆两途，任其所之。',
+        '龟兆清宁，歧出咸顺——可以出，循道而行，至而后图。',
+      ],
+      '凶': [
+        '兆纹旁屈，其势不舒——行有未便，宜缓启途，更卜而往。',
+        '其纹横出，中道如窒——今且止驾，无亟于行，旬日再占。',
+        '龟兆两歧，开合不一——进退未决，宜止勿逐，待时后图。',
+      ],
+    },
+    '行事': {
+      '吉': [
+        '兆纹明润，节节相承——事可举也，宜秉中正，慎终如始。',
+        '其纹顺起顺收，无横枝——举事咸宜，决于己志，行之勿疑。',
+        '火明而纹朗——所图可兴，宜速布置，毋失其时。',
+      ],
+      '凶': [
+        '兆纹多折，枝出不协——事有未协，宜且停置，理顺再举。',
+        '其纹乱而下垂——今未可为，静守毋躁，改卜他日。',
+        '龟兆傍泄，主纹不聚——事宜缓图，毋强进，退而修备。',
+      ],
+    },
+    '相见': {
+      '吉': [
+        '兆纹双歧同向，其末交抱——可见，宜诚素以往，相见则通。',
+        '其纹相迎不相背——往见则宜，先之以信，无俟再三。',
+        '龟兆和润，旁枝皆顺——会见有兆，宜定其期，躬身以往。',
+      ],
+      '凶': [
+        '兆纹相背，末不外舒——见有未合，宜缓其期，更卜而后见。',
+        '其纹中折，两歧不属——今未见宜，且止勿往，信通再图。',
+        '龟兆横仄，如迎如拒——会见难必，宜止而待，无自轻往。',
+      ],
+    },
+    '抉择': {
+      '吉': [
+        '兆纹一歧独明，余纹皆伏——所惑可决，从其明者，舍其二三。',
+        '其纹中正，不左不右——取舍有定，宜守中道，断之以义。',
+        '龟兆顺而有所归——两途之间，从心所安，既决勿反。',
+      ],
+      '凶': [
+        '兆纹两歧争出，势均不合——兹事难决，宜且置之，三思后卜。',
+        '其纹左右交折——取舍未定，毋匆遽择，静心思之。',
+        '龟兆中窒，首尾不属——今皆未可，宜止而守，歧路毋行。',
+      ],
+    },
+    '杂事': {
+      '吉': [
+        '兆纹安和，细纹咸理——细故可处，随宜了之，不以萦怀。',
+        '其纹简净，无争无竞——小事吉，宜简节疏目，处之以宽。',
+        '龟兆平顺，起止自如——凡百细务，皆可次第而理，毋亟毋滞。',
+      ],
+      '凶': [
+        '兆纹微紊，细纹旁出——细故有梗，宜缓置，理顺而后处。',
+        '其纹繁而不属——琐事难骤了，宜且止，宁迟毋躁。',
+        '龟兆小有晦塞——事宜含忍，勿与小竞，改日再占。',
+      ],
+    },
+  };
+  // 未择事类（默问）：用不指向具体事相的通用占辞
+  const GENERIC = {
     '吉': [
       '兆纹顺直，光润而和——所问可往，循正而行。',
       '其纹清朗，无横无仄——吉，事可为，毋需疑虑。',
@@ -110,6 +175,7 @@
     ],
   };
   const pick = arr => arr[Math.floor(Math.random() * arr.length)];
+  const pickText = (c, v) => pick((TEXTS[c] || GENERIC)[v]);
 
   /* ---------- 干支 ---------- */
   const STEMS = '甲乙丙丁戊己庚辛壬癸', BRANCHES = '子丑寅卯辰巳午未申酉戌亥';
@@ -237,8 +303,9 @@
 
   /* ---------- 灼龟 ---------- */
   let verdict = '吉', crack = null;
-  let heating = false, fired = false, timer = null, rumble = null;
-  const HOLD_MS = 1250;
+  let heating = false, fired = false, timer = null, crackTimer = null, rumble = null;
+  const HOLD_MS = 2000;      // 按住总时长
+  const CRACK_AT = 1000;     // 阶段2：裂纹逐条浮现的起点
 
   function resetMeter() {
     const m = $('heat-fill');
@@ -248,7 +315,7 @@
 
   function openBurn() {
     heating = false; fired = false;
-    clearTimeout(timer); clearInterval(rumble);
+    clearTimeout(timer); clearTimeout(crackTimer); clearInterval(rumble);
     verdict = Math.random() < .5 ? '吉' : '凶';
     crack = genCrack(verdict);
     $('burn-cat').textContent = cat ? `问·${cat}` : '问卜';
@@ -276,14 +343,28 @@
     $('burn-hint').textContent = '火炷渐炽，勿松手……';
     startFx();
     if (window.SFX) rumble = setInterval(() => SFX.rub(), 110);
+    crackTimer = setTimeout(beginCracks, CRACK_AT);
     timer = setTimeout(fire, HOLD_MS);
+  }
+
+  // 阶段2（按住满 1s）：主纹先出、枝纹错峰逐条描出，配裂响；约 1s 内出齐
+  function beginCracks() {
+    if (!heating || fired) return;
+    $('burn-crack').innerHTML = crackMarkup(crack, 'burn');
+    $('burn-hint').textContent = '灼而成兆……';
+    if (window.SFX) {
+      SFX.crack();
+      setTimeout(() => { if (heating) SFX.crack(); }, 230);
+    }
+    if (navigator.vibrate) navigator.vibrate(10);
   }
 
   function cancelHeat() {
     if (!heating || fired) return;
     heating = false;
-    clearTimeout(timer); clearInterval(rumble);
+    clearTimeout(timer); clearTimeout(crackTimer); clearInterval(rumble);
     $('s-d-burn').classList.remove('heating');
+    $('burn-crack').innerHTML = '';   // 已出裂纹一并撤去，恢复素甲
     resetMeter();
     $('burn-hint').textContent = '火候未足，再试一次';
   }
@@ -305,19 +386,15 @@
     stage.classList.remove('shake'); void stage.offsetWidth;
     stage.classList.add('shake');
     burstSparks(); startFx(); stopFxSoon();
-    if (window.SFX) {
-      SFX.crack();
-      setTimeout(() => SFX.crack(), 130);
-      setTimeout(() => SFX.rub(), 300);
-    }
+    if (window.SFX) SFX.crack();   // 阶段3：白光一闪的爆裂声
     if (navigator.vibrate) navigator.vibrate([28, 40, 18]);
-    $('burn-crack').innerHTML = crackMarkup(crack, 'burn');
+    // 裂纹已在阶段2出齐，此处只揭晓判词
     setTimeout(() => {
       $('burn-verdict-v').textContent = verdict;
       $('burn-verdict').className = 'burn-say show';
       if (window.SFX) { if (verdict === '吉') SFX.correct(); else SFX.wrong(); }
-    }, 560);
-    setTimeout(openOracle, 1850);
+    }, 220);
+    setTimeout(openOracle, 450);   // 自按住起总时长 2.45s
   }
 
   /* ---------- 卜辞 ---------- */
@@ -326,7 +403,7 @@
     $('o-meta').textContent =
       `维${yearGanZhi(now.getFullYear())}年·${dayGanZhi()}日　卜问${cat || '（默问）'}`;
     $('o-grade').textContent = verdict;
-    $('o-text').textContent = pick(TEXTS[verdict]);
+    $('o-text').textContent = pickText(cat, verdict);
     $('o-crack').innerHTML = crackMarkup(crack, false);
     show('s-d-result');
   }
@@ -424,63 +501,133 @@
     a.click();
   }
 
-  /* ---------- 识字成绩图（750×1334，卷轴 + 竖排判词） ---------- */
+  /* ---------- 识字收藏卡（750×1334：2×6 甲骨格，答错置灰，长按保存） ---------- */
   function drawCover(ctx, img, dx, dy, dw, dh) {
     const s = Math.max(dw / img.width, dh / img.height);
     const sw = dw / s, sh = dh / s;
     ctx.drawImage(img, (img.width - sw) / 2, (img.height - sh) / 2, sw, sh, dx, dy, dw, dh);
   }
-  // 竖排成列：右列先行，自上而下
-  function drawVertical(ctx, s, x, y, step) {
-    for (let i = 0; i < s.length; i++) ctx.fillText(s[i], x, y + i * step);
+  // 内联 SVG（fill=currentColor，400 viewBox）→ 可绘入 canvas 的位图
+  function rasterize(svgStr, color) {
+    const svg = svgStr.replace('currentColor', color);
+    const url = URL.createObjectURL(new Blob([svg], { type: 'image/svg+xml;charset=utf-8' }));
+    return loadImage(url).then(img => { URL.revokeObjectURL(url); return img; });
   }
 
   async function saveQuiz() {
+    const record = window.quizRecord();
     const W = 750, H = 1334;
     const cv = document.createElement('canvas');
     cv.width = W; cv.height = H;
     const x = cv.getContext('2d');
     const FONT = '"Noto Serif SC","Source Han Serif SC","STKaiti","KaiTi",serif';
+    const INK = '#2B2418', GRAY = '#BCB3A2';
 
+    // 米黄底 + 淡龟甲纹理（素甲摄影低透明度压底）
     x.fillStyle = '#EFE7D3'; x.fillRect(0, 0, W, H);
-
-    // 卷轴卡：纵横比取屏上设计比 0.786（346×440），cover 源窗与屏幕一致
-    // → 源 y 302..1217，恰好不含 AI 底图角落的红印
-    const cx0 = 115, cy0 = 225, cw = 520, ch = 661;
-    const scroll = await loadImage('img/result.jpg');
-    drawCover(x, scroll, cx0, cy0, cw, ch);
-    x.strokeStyle = 'rgba(156,123,69,.7)'; x.lineWidth = 1;
-    x.strokeRect(cx0, cy0, cw, ch);
-    x.strokeStyle = 'rgba(156,123,69,.4)';
-    x.strokeRect(cx0 - 10, cy0 - 10, cw + 20, ch + 20);
+    const shell = await loadImage('img/shell.jpg');
+    x.save(); x.globalAlpha = .09;
+    drawCover(x, shell, 0, 0, W, H);
+    x.restore();
+    // 纸本细噪点
+    for (let i = 0; i < 520; i++) {
+      x.fillStyle = `rgba(120,96,60,${Math.random() * .05})`;
+      x.fillRect(Math.random() * W, Math.random() * H, 1.6, 1.6);
+    }
+    // 暖金双线框
+    x.strokeStyle = 'rgba(156,123,69,.65)'; x.lineWidth = 1;
+    x.strokeRect(38, 38, W - 76, H - 76);
+    x.strokeStyle = 'rgba(156,123,69,.3)';
+    x.strokeRect(50, 50, W - 100, H - 100);
 
     x.textAlign = 'center';
-    x.fillStyle = '#7a6745'; x.font = `500 27px ${FONT}`;
-    x.fillText('甲骨问卜 · 识字', W / 2, cy0 + 90);
+    x.fillStyle = '#7a6745'; x.font = `500 30px ${FONT}`;
+    x.fillText('甲骨问卜 · 识字字鉴', W / 2, 118);
+    x.fillStyle = '#A8936F'; x.font = `400 20px ${FONT}`;
+    const now = new Date();
+    x.fillText(`维${yearGanZhi(now.getFullYear())}年·${dayGanZhi()}日　字鉴十二品`, W / 2, 172);
 
-    x.fillStyle = '#A63A2E'; x.font = `900 104px ${FONT}`;
-    x.fillText($('r-grade').textContent, W / 2, cy0 + 240);
+    // 2×6 甲骨格（按本局答题顺序）
+    const CELL = 92, GAP = 18;
+    const gw = 6 * CELL + 5 * GAP;
+    const x0 = (W - gw) / 2, y0 = 226;
+    const glyphImgs = await Promise.all(record.map(r => rasterize(r.glyph, r.ok ? INK : GRAY)));
+    record.forEach((r, i) => {
+      const col = i % 6, row = (i / 6) | 0;
+      const gx = x0 + col * (CELL + GAP), gy = y0 + row * (CELL + GAP);
+      x.fillStyle = r.ok ? '#F7F1E1' : '#E6E0D0';
+      x.fillRect(gx, gy, CELL, CELL);
+      x.strokeStyle = r.ok ? 'rgba(156,123,69,.75)' : 'rgba(160,150,130,.55)';
+      x.strokeRect(gx + .5, gy + .5, CELL - 1, CELL - 1);
+      // 甲骨真形：内缩 11px；答错者灰而淡
+      x.save();
+      if (!r.ok) x.globalAlpha = .8;
+      x.drawImage(glyphImgs[i], gx + 11, gy + 11, CELL - 22, CELL - 22);
+      x.restore();
+      // 藏品序号（左上）
+      x.textAlign = 'left';
+      x.fillStyle = 'rgba(156,123,69,.55)'; x.font = `400 13px ${FONT}`;
+      x.fillText(String(i + 1), gx + 6, gy + 17);
+      x.textAlign = 'center';
+    });
 
-    x.fillStyle = '#5d4f36'; x.font = `400 27px ${FONT}`;
-    x.fillText(`识得 ${$('r-score').textContent} / 12 字`, W / 2, cy0 + 348);
+    // 评级
+    x.fillStyle = '#A63A2E'; x.font = `900 118px ${FONT}`;
+    x.fillText($('r-grade').textContent, W / 2, 596);
+    x.fillStyle = '#5d4f36'; x.font = `400 29px ${FONT}`;
+    x.fillText(`识得 ${$('r-score').textContent} / 12 字`, W / 2, 668);
+    x.fillStyle = '#6f5f42'; x.font = `400 24px ${FONT}`;
+    x.fillText($('r-text').textContent, W / 2, 726);
 
-    // 竖排判词：右列 7 字为先，收在卡内（卡底 cy0+661）
-    const s = $('r-text').textContent;
-    const colR = s.slice(0, 7), colL = s.slice(7);
-    const vy0 = cy0 + 398, step = 34;
-    x.fillStyle = '#43351e'; x.font = `400 28px ${FONT}`;
-    drawVertical(x, colR, 424, vy0, step);
-    drawVertical(x, colL, 350, vy0, step);
+    // 图例：已识 / 未识
+    const ly = 800, ls = 22;
+    x.fillStyle = '#F7F1E1'; x.fillRect(W / 2 - 108, ly - 17, ls, ls);
+    x.strokeStyle = 'rgba(156,123,69,.75)'; x.strokeRect(W / 2 - 107.5, ly - 16.5, ls - 1, ls - 1);
+    x.fillStyle = '#E6E0D0'; x.fillRect(W / 2 + 28, ly - 17, ls, ls);
+    x.strokeStyle = 'rgba(160,150,130,.55)'; x.strokeRect(W / 2 + 28.5, ly - 16.5, ls - 1, ls - 1);
+    x.textAlign = 'left';
+    x.fillStyle = '#6f5f42'; x.font = `400 19px ${FONT}`;
+    x.fillText('已识', W / 2 - 80, ly);
+    x.fillText('未识', W / 2 + 56, ly);
+    x.textAlign = 'center';
 
-    x.fillStyle = '#9a8760'; x.font = `400 19px ${FONT}`;
-    x.fillText('循着一片龟甲，寻踪汉字三千年', W / 2, 1190);
-    x.fillStyle = '#5d4f36'; x.font = `600 22px ${FONT}`;
-    x.fillText('甲骨问卜', W / 2, 1245);
+    // 左下品牌
+    x.textAlign = 'left';
+    x.fillStyle = '#9a8760'; x.font = `400 20px ${FONT}`;
+    x.fillText('循着一片龟甲，寻踪汉字三千年', 58, 1190);
+    x.fillStyle = '#5d4f36'; x.font = `600 26px ${FONT}`;
+    x.fillText('甲骨问卜', 58, 1240);
 
-    const a = document.createElement('a');
-    a.download = '甲骨问卜-识字.jpg';
-    a.href = cv.toDataURL('image/jpeg', .92);
-    a.click();
+    // 右下二维码占位（白地 + 定位角 + 伪码点；日后替换为真实码）
+    const qw = 128, qx = W - 54 - qw, qy = H - 54 - qw;
+    x.fillStyle = '#FFFFFF'; x.fillRect(qx, qy, qw, qw);
+    x.strokeStyle = 'rgba(120,100,70,.8)'; x.lineWidth = 1;
+    x.strokeRect(qx + .5, qy + .5, qw - 1, qw - 1);
+    const M = 7.2, pad = 9;
+    // 三个回字定位角：黑块 → 白心 → 黑点
+    [[pad, pad], [qw - pad - M * 3, pad], [pad, qw - pad - M * 3]].forEach(([fx, fy]) => {
+      x.fillStyle = '#33291C'; x.fillRect(qx + fx, qy + fy, M * 3, M * 3);
+      x.fillStyle = '#FFFFFF'; x.fillRect(qx + fx + M, qy + fy + M, M, M);
+      x.fillStyle = '#33291C'; x.fillRect(qx + fx + M * 1.4, qy + fy + M * 1.4, M * .2, M * .2);
+    });
+    // 伪数据码点（确定性伪随机，仅占位）
+    let seed = 7;
+    const rnd = () => (seed = (seed * 16807) % 2147483647) / 2147483647;
+    for (let r = 0; r < 15; r++)
+      for (let c = 0; c < 15; c++) {
+        const inFinder = (c < 6 && r < 6) || (c > 8 && r < 6) || (c < 6 && r > 8);
+        if (!inFinder && rnd() > .58)
+          x.fillRect(qx + pad + c * M, qy + pad + r * M, M * .86, M * .86);
+      }
+    x.textAlign = 'right';
+    x.fillStyle = '#8a7858'; x.font = `400 17px ${FONT}`;
+    x.fillText('扫码再寻', qx + qw, qy - 12);
+
+    // 弹预览层：长按图片可存相册；<a download> 兼容直接下载
+    const url = cv.toDataURL('image/jpeg', .92);
+    $('card-img').src = url;
+    $('card-link').href = url;
+    $('card-mask').classList.add('show');
   }
   window.__saveQuiz = saveQuiz;
 
@@ -495,6 +642,8 @@
   $('btn-save-oracle').onclick = saveOracle;
   $('btn-share').onclick = saveQuiz; // 覆盖 app.js 中的占位 alert
   $('btn-to-divine').onclick = openAsk;
+  $('card-close').onclick = () => $('card-mask').classList.remove('show');
+  $('card-mask').onclick = e => { if (e.target === $('card-mask')) $('card-mask').classList.remove('show'); };
 
   const stage = $('burn-stage');
   stage.onpointerdown = startHeat;
@@ -508,6 +657,7 @@
   // CDP 调试接口
   window.__divine = {
     fire, preview: previewOracle, openBurn,
+    previewCat: (c, v) => { cat = c; verdict = v; crack = genCrack(v); openOracle(); },
     heat: () => { heating = true; $('s-d-burn').classList.add('heating'); startFx(); },
   };
 

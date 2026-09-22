@@ -43,15 +43,17 @@ body{
 .home-art{height:40vh;overflow:hidden;position:relative;z-index:3;}
 .home-art::after{content:"";position:absolute;left:0;right:0;bottom:0;height:1px;
   background:rgba(156,123,69,.6);}
-.home-art img{width:100%;height:100%;object-fit:cover;object-position:center 30%;
-  animation:artIn 1.1s cubic-bezier(.2,.7,.2,1) both;}
-@keyframes artIn{from{transform:scale(1.08);}to{transform:none;}}
+/* 同图双层：同 src 同裁切，仅显示区域不同（接缝在玄鸟与龟甲间的空白带），
+   分别承担“玄鸟飞入”与“山河龟甲浮起”；重叠像素一致，无拼接痕 */
+.hero-layer{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;
+  object-position:center 30%;}
+.l-bird{clip-path:inset(0 0 32% 0);}
+.l-ground{clip-path:inset(62% 0 0 0);}
 .home-body{flex:1;display:flex;flex-direction:column;justify-content:space-between;
   padding:20px 22px 18px;position:relative;z-index:3;}
 .htitle{font-size:34px;font-weight:900;letter-spacing:.18em;color:var(--ink);line-height:1;
-  text-align:center;animation:rise .55s .2s cubic-bezier(.2,.7,.2,1) both;}
-.doors{display:flex;flex-direction:column;gap:11px;
-  animation:rise .55s .34s cubic-bezier(.2,.7,.2,1) both;}
+  text-align:center;}
+.doors{display:flex;flex-direction:column;gap:11px;transition:opacity .4s ease;}
 .door{display:flex;align-items:center;gap:14px;padding:15px 16px;
   border:1px solid var(--gold);cursor:pointer;user-select:none;transition:transform .12s,opacity .12s;}
 .door::after{content:"";width:8px;height:8px;flex:none;margin-left:auto;align-self:center;
@@ -63,11 +65,29 @@ body{
 .d-text b{display:block;font-size:21px;letter-spacing:.18em;margin-bottom:4px;}
 .d-text span{font-size:12.5px;color:#8a7a5a;letter-spacing:.08em;}
 .home-tools{display:flex;justify-content:center;align-items:center;
-  font-size:12.5px;color:#8a7a5a;
-  animation:rise .55s .48s cubic-bezier(.2,.7,.2,1) both;}
+  font-size:12.5px;color:#8a7a5a;}
 .home-tools span{padding:0 18px;cursor:pointer;}
 .home-tools i{width:1px;height:11px;background:#c9b98f;font-style:normal;}
 @keyframes rise{from{opacity:0;transform:translateY(14px);}to{opacity:1;transform:none;}}
+
+/* 首页开场（仅 .intro 在场上时生效；总时长 2.5s）：
+   玄鸟远飞入(0–1s) → 山河龟甲浮起(.3–1.3s) → 标题末淡入(1.8–2.3s)。
+   动画期间门户半透明不可点；结束或跳过后一切回归终态 */
+.intro-skip{display:none;position:absolute;top:14px;right:16px;z-index:10;
+  color:#a08a5e;font-size:13px;letter-spacing:.2em;cursor:pointer;
+  font-family:var(--serif);}
+#s-home.intro .intro-skip{display:block;}
+#s-home.intro .l-bird{opacity:0;transform:scale(.5);transform-origin:50% 28%;
+  animation:birdIn 1s cubic-bezier(.2,.7,.2,1) forwards;}
+#s-home.intro .l-ground{opacity:0;transform:translateY(50px);
+  animation:groundUp 1s cubic-bezier(.2,.7,.2,1) .3s forwards;}
+#s-home.intro .htitle{opacity:0;animation:titleIn .5s ease 1.8s forwards;}
+#s-home.intro .doors{opacity:.35;pointer-events:none;}
+@keyframes birdIn{from{opacity:0;transform:scale(.5);}
+  to{opacity:1;transform:scale(1);}}
+@keyframes groundUp{from{opacity:0;transform:translateY(50px);}
+  to{opacity:1;transform:none;}}
+@keyframes titleIn{to{opacity:1;}}
 
 /* 问卜 · 命龟 */
 .go-home{cursor:pointer;color:#a08a5e;}
@@ -104,14 +124,32 @@ body{
 .burn-stage .tk{border-color:rgba(156,123,69,.85);}
 .burn-shell{position:absolute;inset:0;width:100%;height:100%;object-fit:contain;
   mix-blend-mode:multiply;}
-/* 火光：多层暖色，screen 透叠；加热时呼吸明灭 */
+/* 火光：多层暖色，screen 透叠。
+   阶段1：橙红火光自龟甲中心向外扩散（scale .18→1，1s）；
+   ::before 深红底焰先显后退（深红→橙红升温），满 1s 后转为呼吸明灭 */
 .heatglow{position:absolute;inset:0;opacity:0;pointer-events:none;transition:opacity .3s;
   mix-blend-mode:screen;z-index:2;
-  background:radial-gradient(circle at 50% 72%,rgba(255,238,196,.92) 0%,rgba(240,150,60,.55) 17%,
+  background:radial-gradient(circle at 50% 60%,rgba(255,238,196,.92) 0%,rgba(240,150,60,.55) 17%,
     rgba(166,58,46,.30) 38%,transparent 62%);}
-#s-d-burn.heating .heatglow{opacity:1;animation:heatflick .24s ease-in-out infinite alternate;}
+.heatglow::before{content:"";position:absolute;inset:0;opacity:0;transform:scale(.25);
+  transform-origin:50% 60%;
+  background:radial-gradient(circle at 50% 60%,rgba(168,40,30,.78) 0%,
+    rgba(120,24,20,.42) 42%,transparent 68%);}
+#s-d-burn.heating .heatglow{opacity:1;transform-origin:50% 60%;
+  animation:heatgrow 1s cubic-bezier(.25,.7,.3,1) forwards,
+    heatflick .24s ease-in-out 1s infinite alternate;}
+#s-d-burn.heating .heatglow::before{animation:redgrow 1s ease forwards;}
 /* 火裂之后：余光不退，留半盏暖 */
 #s-d-burn.fired .heatglow{opacity:.5;}
+@keyframes heatgrow{
+  0%{transform:scale(.18);opacity:0;}
+  12%{opacity:.9;}
+  55%{transform:scale(.72);opacity:.95;}
+  100%{transform:scale(1);opacity:1;}}
+@keyframes redgrow{
+  0%{transform:scale(.25);opacity:.92;}
+  70%{opacity:.5;}
+  100%{transform:scale(1);opacity:.26;}}
 @keyframes heatflick{from{transform:scale(1);opacity:.86}to{transform:scale(1.045);opacity:1}}
 /* 火星 / 烟雾粒子层 */
 .burn-fx{position:absolute;inset:0;width:100%;height:100%;z-index:4;pointer-events:none;}
@@ -124,9 +162,9 @@ body{
 .hc.draw{animation:crackdraw .5s ease forwards;}
 /* 点火一瞬：闪光 + 震屏 */
 .burn-flash{position:absolute;inset:0;opacity:0;pointer-events:none;z-index:6;
-  background:radial-gradient(circle at 50% 60%,rgba(255,244,214,.95),
-    rgba(230,120,50,.4) 45%,transparent 75%);}
-.burn-flash.fire{animation:flash .8s ease-out;}
+  background:radial-gradient(circle at 50% 58%,rgba(255,252,242,1) 0%,
+    rgba(255,238,186,.82) 30%,rgba(242,156,72,.4) 60%,transparent 82%);}
+.burn-flash.fire{animation:flash .6s ease-out;}
 @keyframes flash{0%{opacity:0}7%{opacity:1}100%{opacity:0}}
 .burn-stage.shake{animation:stageShake .55s cubic-bezier(.36,.07,.19,.97);}
 @keyframes stageShake{
@@ -140,7 +178,7 @@ body{
 .heat-meter{height:2px;background:rgba(156,123,69,.25);margin-top:16px;position:relative;z-index:3;
   transition:opacity .3s;}
 .heat-meter i{display:block;height:100%;background:var(--cinnabar);width:0;}
-#s-d-burn.heating .heat-meter i{transition:width 1.25s linear;width:100%;
+#s-d-burn.heating .heat-meter i{transition:width 2s linear;width:100%;
   background:linear-gradient(90deg,#C97B3E,#A63A2E);box-shadow:0 0 6px rgba(214,96,42,.8);}
 
 /* 问卜 · 卜辞（Seedream 底图：上玄鸟 / 中灼晕 / 下山纹铜边） */
@@ -166,6 +204,18 @@ body{
 .cross-link{text-align:center;font-size:13.5px;color:#a08a5e;margin-top:18px;cursor:pointer;
   letter-spacing:.15em;}
 
+/* 答题 / 拓印：商代青铜式玄鸟纹底（Seedream 5.0 Pro 生成，手工色阶处理；
+   取法妇好墓"好"汽柱甑颈部小鸟纹：闭钩喙/圆眼/多齿冠/短翅/尾分二翎；
+   只有玄鸟，无碎片/裂纹/云雷纹，无文字）。透明度 22%，若隐若现
+   答题=白底图 multiply；拓印=反转黑底图 screen，骨白隐纹 */
+#s-quiz::before,#s-rub::before{
+  content:"";position:absolute;inset:0;pointer-events:none;z-index:0;
+  background-size:cover;background-position:center;}
+#s-quiz::before{background-image:url("../img/bird-pattern.jpg");
+  mix-blend-mode:multiply;opacity:.22;}
+#s-rub::before{background-image:url("../img/bird-pattern-dark.jpg");
+  mix-blend-mode:screen;opacity:.22;}
+
 /* 答题 */
 #s-quiz .glyph-card{margin-top:auto;}
 #s-quiz .opts{margin-top:auto;}
@@ -187,16 +237,32 @@ body{
 .tk.tr{top:-5px;right:-5px;border-top-width:1.5px;border-right-width:1.5px;}
 .tk.bl{bottom:-5px;left:-5px;border-bottom-width:1.5px;border-left-width:1.5px;}
 .tk.br{bottom:-5px;right:-5px;border-bottom-width:1.5px;border-right-width:1.5px;}
+/* 楷书显字层：答对后甲骨刻痕溶去，楷书自 1.1 倍大敛入 */
+.kaishu{position:absolute;inset:0;z-index:2;display:flex;align-items:center;
+  justify-content:center;font-size:126px;line-height:1;color:var(--ink);
+  font-family:var(--serif);opacity:0;transform:scale(1.1);pointer-events:none;}
+.glyph-card.morph .glyph-slot svg{opacity:0;transition:opacity .8s ease;}
+.glyph-card.morph .kaishu{opacity:1;transform:scale(1);
+  transition:opacity .8s ease .5s,transform .8s cubic-bezier(.2,.8,.3,1) .5s;}
 .glyph-card.correct{border-color:var(--bronze);}
 .glyph-card.correct .tk{border-color:var(--bronze);}
 .glyph-card.wrong{animation:shake .35s;}
 @keyframes shake{0%,100%{transform:translateX(0);}25%{transform:translateX(-7px);}75%{transform:translateX(7px);}}
-/* 灼兆裂纹：朱砂所绘，即"卜"之形 */
+/* 答错裂纹：朱砂所绘，0.3s 骤然描出、再 0.5s 淡出，0.8s 内净尽不遮眼 */
 .crack{position:absolute;inset:0;z-index:3;opacity:0;pointer-events:none;}
-.glyph-card.correct .crack{opacity:1;}
 .crack path{fill:none;stroke:var(--cinnabar);stroke-width:2;stroke-linecap:round;
-  stroke-dasharray:300;stroke-dashoffset:300;animation:crackdraw .5s ease forwards;}
+  stroke-dasharray:300;stroke-dashoffset:300;}
+.glyph-card.wrong .crack{animation:crackFlash .8s ease forwards;}
+.glyph-card.wrong .crack path{animation:crackdraw .3s ease forwards;}
 @keyframes crackdraw{to{stroke-dashoffset:0;}}
+@keyframes crackFlash{0%,6%{opacity:0;}12%,37%{opacity:1;}100%{opacity:0;}}
+
+/* 答错提示：与裂纹同闪同隐（固定行高，选项不跳动） */
+.q-tip{flex:none;height:26px;margin-top:6px;display:flex;align-items:center;
+  justify-content:center;font-size:15px;letter-spacing:.3em;color:var(--cinnabar);
+  font-family:var(--serif);opacity:0;position:relative;z-index:3;}
+.q-tip.show{animation:tipFlash .8s ease;}
+@keyframes tipFlash{0%,6%{opacity:0;}14%,45%{opacity:1;}100%{opacity:0;}}
 
 /* 选项：发丝线网格，无圆角 */
 .opts{display:grid;grid-template-columns:1fr 1fr;gap:1px;margin-top:auto;
@@ -224,6 +290,20 @@ body{
 .explain-actions{display:flex;gap:12px;}
 .explain-actions .btn{flex:1;font-size:15px;padding:14px;z-index:1;}
 
+/* 字鉴收藏卡预览层（长按存图；遮罩点击收起） */
+.card-mask{position:absolute;inset:0;background:rgba(20,16,10,.72);display:none;
+  align-items:center;justify-content:center;padding:34px 30px;z-index:30;}
+.card-mask.show{display:flex;animation:screenIn .3s;}
+.card-preview{display:flex;flex-direction:column;align-items:center;width:100%;max-width:340px;}
+.card-hint{flex:none;color:#cdbb92;font-size:13px;letter-spacing:.3em;margin-bottom:12px;
+  font-family:var(--serif);}
+#card-link{display:block;width:100%;line-height:0;}
+#card-img{width:100%;max-height:72vh;border:1px solid rgba(176,146,94,.55);
+  box-shadow:0 12px 42px rgba(0,0,0,.5);
+  -webkit-touch-callout:default;touch-callout:default;user-select:auto;}
+.card-close{flex:none;margin-top:16px;color:#a8936f;font-size:13px;letter-spacing:.3em;
+  cursor:pointer;font-family:var(--serif);}
+
 /* 拓印 —— 全场墨黑，拓白显形，全篇唯一高光 */
 #s-rub{background:var(--ink);color:var(--bone);}
 #s-rub .topline{color:rgba(247,241,225,.6);}
@@ -238,19 +318,29 @@ body{
 #s-rub .opts{background:rgba(247,241,225,.25);border-color:rgba(247,241,225,.25);}
 #s-rub .opt{background:var(--ink);color:var(--bone);}
 
-/* 观变 */
+/* 观变 —— 横向字源轮播（cover-flow）
+   当前阶段居中放大高亮；左右邻阶 .3 透明、.7 缩小、向外偏移；
+   再外的阶段隐去。0.6s 平滑滑动，仅 transform/opacity */
 .evo-back{cursor:pointer;color:#a08a5e;}
-.evo-stage{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:18px;}
-.evo-glyph{width:min(72vw,300px);height:min(72vw,300px);display:flex;align-items:center;justify-content:center;
-  color:var(--ink);position:relative;z-index:3;}
-.evo-glyph svg{width:100%;height:100%;animation:glyphIn .4s ease;}
-.evo-glyph span.txt{font-size:140px;line-height:1;animation:glyphIn .4s ease;}
-.evo-glyph span.txt.li{font-family:"STLiti","LiSu","KaiTi",serif;font-weight:600;}
-.evo-glyph span.txt.kai{font-family:"STKaiti","KaiTi","Noto Serif SC",serif;}
+.evo-stage{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;
+  min-height:0;}
+.evo-carousel{position:relative;width:100%;height:min(66vw,272px);flex:none;touch-action:pan-y;}
+.evo-cell{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;
+  pointer-events:none;opacity:0;color:var(--ink);}
+.cell-box{width:min(60vw,240px);aspect-ratio:1;display:flex;align-items:center;justify-content:center;
+  transform:translateX(var(--x,0)) scale(var(--s,1));transform-origin:center;}
+.evo-carousel.ready .evo-cell{transition:opacity .6s ease;}
+.evo-carousel.ready .cell-box{transition:transform .6s cubic-bezier(.25,.8,.3,1);}
+.cell-box svg{width:100%;height:100%;}
+.cell-box span.txt{font-size:116px;line-height:1;}
+.cell-box img.li-glyph{width:100%;height:100%;object-fit:contain;}
+.cell-box span.txt.kai{font-family:"STKaiti","KaiTi","Noto Serif SC",serif;}
 .evo-char-name{font-size:15px;color:#8a7a5a;letter-spacing:.2em;}
 .evo-note{font-size:13.5px;line-height:1.9;color:#5d4f36;text-align:left;
   border-left:2px solid var(--bronze);padding:2px 0 2px 12px;margin:0 0 18px;
   font-family:var(--serif);position:relative;z-index:3;}
+.evo-note.flash{animation:evoFade .45s ease;}
+@keyframes evoFade{from{opacity:.2;}to{opacity:1;}}
 .evo-rail{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:20px;
   position:relative;z-index:3;}
 .evo-rail::before{content:"";position:absolute;top:12px;left:10%;right:10%;height:1px;

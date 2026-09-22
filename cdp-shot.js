@@ -35,7 +35,7 @@ const [, , outFile, urlPath, hOverride, postJs] = process.argv;
   });
   const sep = urlPath.startsWith('#') ? '?t=' + Date.now() : '';
   await send('Page.navigate', { url: 'http://localhost:8765/' + sep + urlPath });
-  await sleep(2000);
+  await sleep(+process.env.BASE_WAIT || 2000);
   if (postJs) {
     await send('Runtime.enable');
     await send('Runtime.evaluate', { expression: postJs, awaitPromise: true });
