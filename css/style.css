@@ -1,0 +1,350 @@
+/* 《甲骨问卜》—— 朱墨分职：纸 / 墨 / 骨白 / 青铜 / 朱砂 / 赭金
+   朱砂只用于"卜"（评级、卜点、灼痕），青铜只用于确认，金只做发丝细线 */
+:root{
+  --paper:#EFE7D3; --ink:#1F1A14; --bone:#F7F1E1;
+  --bronze:#2F6E6A; --cinnabar:#A63A2E; --gold:#9C7B45;
+  --serif:"Noto Serif SC","Source Han Serif SC","STKaiti","KaiTi","SimSun",serif;
+  --sans:"Noto Sans SC","Source Han Sans SC","Microsoft YaHei",sans-serif;
+}
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
+html,body{height:100%;}
+body{
+  background:#1c1917; color:var(--ink); display:flex; justify-content:center;
+}
+#app{
+  width:100%; max-width:480px; min-height:100dvh; position:relative; overflow:hidden;
+  background:var(--paper); font-family:var(--serif);
+}
+/* 细宣纸肌理（SVG 噪声，极淡） */
+#app::before{content:"";position:absolute;inset:0;pointer-events:none;opacity:.5;z-index:2;
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2'/%3E%3CfeColorMatrix values='0 0 0 0 0.45 0 0 0 0 0.36 0 0 0 0 0.2 0 0 0 0.04 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");}
+.screen{position:absolute;inset:0;display:none;flex-direction:column;padding:22px 22px 26px;
+  animation:screenIn .35s ease;z-index:1;overflow-y:auto;}
+.screen.active{display:flex;}
+@keyframes screenIn{from{opacity:0;}to{opacity:1;}}
+
+/* 通用构件 */
+.topline{display:flex;justify-content:space-between;align-items:center;font-size:12.5px;color:#8a7a5a;
+  letter-spacing:.12em;position:relative;z-index:3;}
+.progress{height:2px;background:rgba(156,123,69,.28);overflow:hidden;margin:13px 0 4px;
+  position:relative;z-index:3;}
+.progress i{display:block;height:100%;background:var(--gold);width:0;transition:width .4s ease;}
+.btn{
+  display:block;width:100%;padding:16px;border:1px solid transparent;border-radius:2px;cursor:pointer;
+  font-size:17px;letter-spacing:.3em;text-indent:.3em;font-family:var(--serif);
+  position:relative;z-index:3;transition:opacity .12s;}
+.btn:active{opacity:.8;}
+.btn.ink{background:var(--ink);color:var(--bone);}
+.btn.hair{background:transparent;color:var(--ink);border-color:var(--gold);letter-spacing:.22em;
+  text-indent:.22em;}
+
+/* 首页 —— 全出血主视觉 + 双门户，唯一的入场编排 */
+#s-home{padding:0;}
+.home-art{height:40vh;overflow:hidden;position:relative;z-index:3;}
+.home-art::after{content:"";position:absolute;left:0;right:0;bottom:0;height:1px;
+  background:rgba(156,123,69,.6);}
+.home-art img{width:100%;height:100%;object-fit:cover;object-position:center 30%;
+  animation:artIn 1.1s cubic-bezier(.2,.7,.2,1) both;}
+@keyframes artIn{from{transform:scale(1.08);}to{transform:none;}}
+.home-body{flex:1;display:flex;flex-direction:column;justify-content:space-between;
+  padding:20px 22px 18px;position:relative;z-index:3;}
+.htitle{font-size:34px;font-weight:900;letter-spacing:.18em;color:var(--ink);line-height:1;
+  text-align:center;animation:rise .55s .2s cubic-bezier(.2,.7,.2,1) both;}
+.doors{display:flex;flex-direction:column;gap:11px;
+  animation:rise .55s .34s cubic-bezier(.2,.7,.2,1) both;}
+.door{display:flex;align-items:center;gap:14px;padding:15px 16px;
+  border:1px solid var(--gold);cursor:pointer;user-select:none;transition:transform .12s,opacity .12s;}
+.door::after{content:"";width:8px;height:8px;flex:none;margin-left:auto;align-self:center;
+  border-top:1px solid #b3a074;border-right:1px solid #b3a074;transform:rotate(45deg);}
+.door:active{transform:translateY(1px);opacity:.75;}
+.dseal{width:42px;height:42px;flex:none;background:var(--cinnabar);color:var(--bone);
+  display:flex;align-items:center;justify-content:center;font-size:22px;border-radius:2px;}
+.dseal.ink{background:var(--ink);}
+.d-text b{display:block;font-size:21px;letter-spacing:.18em;margin-bottom:4px;}
+.d-text span{font-size:12.5px;color:#8a7a5a;letter-spacing:.08em;}
+.home-tools{display:flex;justify-content:center;align-items:center;
+  font-size:12.5px;color:#8a7a5a;
+  animation:rise .55s .48s cubic-bezier(.2,.7,.2,1) both;}
+.home-tools span{padding:0 18px;cursor:pointer;}
+.home-tools i{width:1px;height:11px;background:#c9b98f;font-style:normal;}
+@keyframes rise{from{opacity:0;transform:translateY(14px);}to{opacity:1;transform:none;}}
+
+/* 问卜 · 命龟 */
+.go-home{cursor:pointer;color:#a08a5e;}
+.d-lead h3{font-size:23px;letter-spacing:.12em;margin:28px 0 14px;}
+.d-lead p{font-size:14.5px;line-height:2.1;color:#5d4f36;}
+.d-cats{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin:28px 0;}
+.cat{padding:14px 0;text-align:center;border:1px solid var(--gold);font-size:16px;
+  background:transparent;cursor:pointer;color:var(--ink);font-family:var(--serif);
+  transition:background .2s,color .2s,border-color .2s;}
+.cat:active{transform:translateY(1px);}
+.cat.on{background:var(--ink);color:var(--bone);border-color:var(--ink);}
+#btn-charge{margin-top:auto;}
+.d-foot{font-size:12px;color:#9a8760;text-align:center;margin-top:14px;line-height:1.8;
+  position:relative;z-index:3;}
+
+/* 三步进度：命龟 → 灼龟 → 卜辞 */
+.steps{display:flex;align-items:center;justify-content:center;gap:9px;margin-top:13px;
+  font-size:11.5px;letter-spacing:.22em;color:#bcaf92;font-family:var(--serif);
+  position:relative;z-index:3;}
+.steps i{width:16px;height:1px;background:#ccbe99;font-style:normal;}
+.steps .done{color:#9a8c6b;}
+.steps .cur{color:var(--cinnabar);font-weight:700;}
+
+/* 问卜 · 灼龟 */
+/* 环境压暗：加热/裂后，四周暗下，视线聚于龟甲 */
+.burn-dim{position:absolute;left:-22px;right:-22px;top:-22px;bottom:-22px;pointer-events:none;
+  opacity:0;transition:opacity .55s ease;z-index:0;
+  background:radial-gradient(circle at 50% 47%,transparent 26%,
+    rgba(33,25,17,.14) 48%,rgba(24,18,12,.30) 76%,rgba(17,12,8,.40) 100%);}
+#s-d-burn.heating .burn-dim,#s-d-burn.fired .burn-dim{opacity:1;}
+
+.burn-stage{position:relative;width:min(72vw,300px);aspect-ratio:1;margin:26px auto 0;
+  border:1px solid rgba(156,123,69,.55);touch-action:none;user-select:none;}
+.burn-stage .tk{border-color:rgba(156,123,69,.85);}
+.burn-shell{position:absolute;inset:0;width:100%;height:100%;object-fit:contain;
+  mix-blend-mode:multiply;}
+/* 火光：多层暖色，screen 透叠；加热时呼吸明灭 */
+.heatglow{position:absolute;inset:0;opacity:0;pointer-events:none;transition:opacity .3s;
+  mix-blend-mode:screen;z-index:2;
+  background:radial-gradient(circle at 50% 72%,rgba(255,238,196,.92) 0%,rgba(240,150,60,.55) 17%,
+    rgba(166,58,46,.30) 38%,transparent 62%);}
+#s-d-burn.heating .heatglow{opacity:1;animation:heatflick .24s ease-in-out infinite alternate;}
+/* 火裂之后：余光不退，留半盏暖 */
+#s-d-burn.fired .heatglow{opacity:.5;}
+@keyframes heatflick{from{transform:scale(1);opacity:.86}to{transform:scale(1.045);opacity:1}}
+/* 火星 / 烟雾粒子层 */
+.burn-fx{position:absolute;inset:0;width:100%;height:100%;z-index:4;pointer-events:none;}
+.burn-crack,.o-crack{position:absolute;inset:0;width:100%;height:100%;z-index:5;}
+/* 三层灼热裂纹：辉光 / 朱砂 / 白炽核心 */
+.hc{fill:none;stroke-dasharray:300;stroke-dashoffset:300;stroke-linecap:round;stroke-linejoin:round;}
+.hc-glow{stroke:rgba(214,96,42,.5);stroke-width:6;filter:blur(3px);}
+.hc-mid{stroke:var(--cinnabar);stroke-width:2.8;}
+.hc-core{stroke:#FFE6B0;stroke-width:1.1;}
+.hc.draw{animation:crackdraw .5s ease forwards;}
+/* 点火一瞬：闪光 + 震屏 */
+.burn-flash{position:absolute;inset:0;opacity:0;pointer-events:none;z-index:6;
+  background:radial-gradient(circle at 50% 60%,rgba(255,244,214,.95),
+    rgba(230,120,50,.4) 45%,transparent 75%);}
+.burn-flash.fire{animation:flash .8s ease-out;}
+@keyframes flash{0%{opacity:0}7%{opacity:1}100%{opacity:0}}
+.burn-stage.shake{animation:stageShake .55s cubic-bezier(.36,.07,.19,.97);}
+@keyframes stageShake{
+  10%,90%{transform:translate(-1px,0)}20%,80%{transform:translate(2px,1px)}
+  30%,50%,70%{transform:translate(-3px,-1px)}40%,60%{transform:translate(3px,1px)}}
+.burn-say{display:flex;justify-content:center;align-items:baseline;gap:14px;margin-top:20px;
+  opacity:0;position:relative;z-index:3;}
+.burn-say.show{animation:glyphIn .5s ease both;}
+.bsay-prefix{font-size:19px;color:var(--gold);letter-spacing:.2em;}
+.burn-say #burn-verdict-v{font-size:64px;color:var(--cinnabar);font-weight:900;line-height:1;}
+.heat-meter{height:2px;background:rgba(156,123,69,.25);margin-top:16px;position:relative;z-index:3;
+  transition:opacity .3s;}
+.heat-meter i{display:block;height:100%;background:var(--cinnabar);width:0;}
+#s-d-burn.heating .heat-meter i{transition:width 1.25s linear;width:100%;
+  background:linear-gradient(90deg,#C97B3E,#A63A2E);box-shadow:0 0 6px rgba(214,96,42,.8);}
+
+/* 问卜 · 卜辞（Seedream 底图：上玄鸟 / 中灼晕 / 下山纹铜边） */
+.oracle-bg{position:absolute;inset:0;z-index:0;}
+.oracle-bg img{width:100%;height:100%;object-fit:cover;}
+/* 不设 z-index：避免形成堆叠上下文，保证 shell 的 multiply 能与底图混合 */
+.oracle{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:flex-start;
+  position:relative;}
+.o-meta,.o-grade,.o-text{position:relative;}
+.o-pad{flex:.9;}
+.o-pad.bot{flex:1;}
+.o-meta{font-size:13.5px;color:#7a6745;letter-spacing:.1em;}
+.o-stage{position:relative;width:min(56vw,220px);aspect-ratio:1;margin-top:12px;}
+.o-stage img{position:absolute;inset:0;width:100%;height:100%;object-fit:contain;
+  mix-blend-mode:multiply;}
+.o-crack path{fill:none;stroke:var(--cinnabar);stroke-width:2.8;stroke-linecap:round;}
+.o-grade{font-size:92px;color:var(--cinnabar);font-weight:900;line-height:1;margin-top:18px;}
+.o-text{font-size:14px;color:#43351e;line-height:2;text-align:center;padding:0 8px;margin-top:10px;}
+.o-tools{display:flex;gap:10px;position:relative;z-index:3;margin-top:6px;}
+.o-tools .btn{flex:1;font-size:14px;padding:14px 4px;letter-spacing:.1em;text-indent:.1em;}
+
+/* 识字结果 → 问卜导流 */
+.cross-link{text-align:center;font-size:13.5px;color:#a08a5e;margin-top:18px;cursor:pointer;
+  letter-spacing:.15em;}
+
+/* 答题 */
+#s-quiz .glyph-card{margin-top:auto;}
+#s-quiz .opts{margin-top:auto;}
+.q-prompt{font-size:16px;color:#5d4f36;letter-spacing:.08em;margin:14px 0 6px;
+  font-family:var(--serif);position:relative;z-index:3;}
+.glyph-card{
+  width:100%;max-width:356px;aspect-ratio:1;margin:10px auto 0;position:relative;flex:none;
+  border:1px solid rgba(156,123,69,.55);background:transparent;z-index:3;
+  display:flex;align-items:center;justify-content:center;}
+.glyph-card .shellbg{position:absolute;inset:0;width:100%;height:100%;object-fit:contain;}
+.glyph-slot{position:relative;z-index:2;width:100%;height:100%;display:flex;
+  align-items:center;justify-content:center;}
+.glyph-slot svg{width:62%;color:#2a2013;animation:glyphIn .5s cubic-bezier(.2,.8,.3,1.1);}
+@keyframes glyphIn{from{opacity:0;transform:scale(.8);}to{opacity:1;transform:none;}}
+/* 图版四角刻符 */
+.tk{position:absolute;width:14px;height:14px;border:0 solid var(--ink);z-index:4;
+  pointer-events:none;}
+.tk.tl{top:-5px;left:-5px;border-top-width:1.5px;border-left-width:1.5px;}
+.tk.tr{top:-5px;right:-5px;border-top-width:1.5px;border-right-width:1.5px;}
+.tk.bl{bottom:-5px;left:-5px;border-bottom-width:1.5px;border-left-width:1.5px;}
+.tk.br{bottom:-5px;right:-5px;border-bottom-width:1.5px;border-right-width:1.5px;}
+.glyph-card.correct{border-color:var(--bronze);}
+.glyph-card.correct .tk{border-color:var(--bronze);}
+.glyph-card.wrong{animation:shake .35s;}
+@keyframes shake{0%,100%{transform:translateX(0);}25%{transform:translateX(-7px);}75%{transform:translateX(7px);}}
+/* 灼兆裂纹：朱砂所绘，即"卜"之形 */
+.crack{position:absolute;inset:0;z-index:3;opacity:0;pointer-events:none;}
+.glyph-card.correct .crack{opacity:1;}
+.crack path{fill:none;stroke:var(--cinnabar);stroke-width:2;stroke-linecap:round;
+  stroke-dasharray:300;stroke-dashoffset:300;animation:crackdraw .5s ease forwards;}
+@keyframes crackdraw{to{stroke-dashoffset:0;}}
+
+/* 选项：发丝线网格，无圆角 */
+.opts{display:grid;grid-template-columns:1fr 1fr;gap:1px;margin-top:auto;
+  background:rgba(156,123,69,.5);border:1px solid rgba(156,123,69,.5);
+  position:relative;z-index:3;}
+.opt{
+  padding:17px 0;text-align:center;font-size:22px;cursor:pointer;border:none;
+  background:var(--paper);color:var(--ink);font-family:var(--serif);transition:opacity .12s;}
+.opt:active{opacity:.82;}
+.opt.right{background:var(--bronze);color:var(--bone);}
+.opt.bad{background:var(--cinnabar);color:var(--bone);}
+.opt.lock{pointer-events:none;}
+.opt.lock:not(.right):not(.bad){opacity:.45;}
+
+/* 解说弹层 */
+.explain-mask{position:absolute;inset:0;background:rgba(20,16,10,.55);display:none;
+  align-items:flex-end;z-index:20;}
+.explain-mask.show{display:flex;animation:screenIn .3s;}
+.explain-sheet{width:100%;background:var(--paper);padding:24px 24px 28px;
+  border-top:2px solid var(--gold);animation:up .35s ease;}
+@keyframes up{from{transform:translateY(40px);}to{transform:none;}}
+.explain-sheet h4{font-size:15px;color:var(--cinnabar);letter-spacing:.25em;margin-bottom:10px;
+  font-weight:700;font-family:var(--serif);}
+.explain-sheet p{font-size:15.5px;line-height:1.9;color:#4a3c24;margin-bottom:16px;}
+.explain-actions{display:flex;gap:12px;}
+.explain-actions .btn{flex:1;font-size:15px;padding:14px;z-index:1;}
+
+/* 拓印 —— 全场墨黑，拓白显形，全篇唯一高光 */
+#s-rub{background:var(--ink);color:var(--bone);}
+#s-rub .topline{color:rgba(247,241,225,.6);}
+#s-rub .progress{background:rgba(247,241,225,.18);}
+#s-rub .progress i{background:var(--bronze);}
+#s-rub .q-prompt{color:rgba(247,241,225,.82);}
+.rub-stage{position:relative;width:100%;max-width:356px;height:48vh;margin:auto;
+  border:1px solid rgba(247,241,225,.35);background:var(--ink);z-index:3;}
+.rub-stage .glyph-card{position:absolute;inset:0;margin:0;max-width:none;border:none;background:var(--ink);}
+.rub-stage .glyph-slot svg{width:60%;color:var(--bone);}
+#rub-canvas{position:absolute;inset:0;width:100%;height:100%;z-index:4;touch-action:none;cursor:crosshair;}
+#s-rub .opts{background:rgba(247,241,225,.25);border-color:rgba(247,241,225,.25);}
+#s-rub .opt{background:var(--ink);color:var(--bone);}
+
+/* 观变 */
+.evo-back{cursor:pointer;color:#a08a5e;}
+.evo-stage{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:18px;}
+.evo-glyph{width:min(72vw,300px);height:min(72vw,300px);display:flex;align-items:center;justify-content:center;
+  color:var(--ink);position:relative;z-index:3;}
+.evo-glyph svg{width:100%;height:100%;animation:glyphIn .4s ease;}
+.evo-glyph span.txt{font-size:140px;line-height:1;animation:glyphIn .4s ease;}
+.evo-glyph span.txt.li{font-family:"STLiti","LiSu","KaiTi",serif;font-weight:600;}
+.evo-glyph span.txt.kai{font-family:"STKaiti","KaiTi","Noto Serif SC",serif;}
+.evo-char-name{font-size:15px;color:#8a7a5a;letter-spacing:.2em;}
+.evo-note{font-size:13.5px;line-height:1.9;color:#5d4f36;text-align:left;
+  border-left:2px solid var(--bronze);padding:2px 0 2px 12px;margin:0 0 18px;
+  font-family:var(--serif);position:relative;z-index:3;}
+.evo-rail{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:20px;
+  position:relative;z-index:3;}
+.evo-rail::before{content:"";position:absolute;top:12px;left:10%;right:10%;height:1px;
+  background:rgba(156,123,69,.4);}
+.evo-node{flex:1;text-align:center;cursor:pointer;position:relative;z-index:1;}
+.evo-node i{display:block;width:24px;height:24px;border-radius:50%;background:var(--paper);
+  border:1.5px solid var(--gold);margin:0 auto 7px;font-style:normal;font-size:11.5px;
+  line-height:21px;color:#9a8760;transition:all .2s;}
+.evo-node span{font-size:10.5px;color:#9a8760;font-family:var(--serif);}
+.evo-node.on i{background:var(--bronze);border-color:var(--bronze);color:var(--bone);}
+.evo-node.on span{color:var(--bronze);font-weight:600;}
+#evo-done{font-size:15px;padding:14px;}
+
+/* 结果 —— 卷轴如卜辞，判词竖排 */
+#s-result{justify-content:center;}
+.result-card{
+  padding:38px 30px 34px;text-align:center;position:relative;overflow:hidden;
+  min-height:440px;display:flex;flex-direction:column;justify-content:center;z-index:3;}
+.result-card img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;z-index:0;}
+.result-card > *{position:relative;z-index:1;}
+.result-card .r-label{font-size:12.5px;letter-spacing:.3em;color:#7a6745;font-family:var(--serif);}
+.result-card .r-grade{font-size:68px;color:var(--cinnabar);margin:12px 0;letter-spacing:.16em;
+  font-family:var(--serif);font-weight:900;line-height:1.1;}
+.result-card .r-score{font-size:15px;color:#5d4f36;line-height:2;}
+.result-card .r-text{writing-mode:vertical-rl;height:116px;margin:16px auto 0;
+  font-size:15px;color:#43351e;line-height:1.9;font-family:var(--serif);}
+.result-tools{display:flex;gap:12px;margin-top:18px;position:relative;z-index:3;}
+.result-tools .btn{flex:1;font-size:15px;letter-spacing:.2em;text-indent:.2em;padding:14px;}
+
+/* ============================================================
+   问卜三屏 · 「玄漆夜祭」深色方案
+   白日识字（浅纸）／夜阑问卜（玄漆）；老师：底色要沉、要有神秘感
+   ============================================================ */
+.night{
+  --n-base:#17120E; --n-halo:#2A1F16; --n-edge:#0D0A07;
+  --n-text:#E9DCBE; --n-sub:#A8936F; --n-faint:#84735A;
+  --n-line:rgba(176,146,94,.5); --n-cinnabar:#C64A34;
+  background:radial-gradient(circle at 50% 44%,var(--n-halo) 0%,var(--n-base) 56%,var(--n-edge) 100%);
+}
+/* 深底细噪：如骨屑微光（#app::before 的暗噪在深底上不可见） */
+.night::before{content:"";position:absolute;inset:0;pointer-events:none;opacity:.05;z-index:0;
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2'/%3E%3CfeColorMatrix values='0 0 0 0 0.91 0 0 0 0 0.86 0 0 0 0 0.75 0 0 0 0.5 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");}
+
+/* 龟甲合成翻转：黑底 screen 消去，骨甲如在暗中受火自明 */
+.night .burn-shell,.night .o-stage img{mix-blend-mode:screen;}
+
+/* 顶栏 / 返回 / 步骤 */
+.night .topline{color:var(--n-sub);}
+.night .go-home{color:var(--n-sub);}
+.night .steps{color:#7d6f55;}
+.night .steps i{background:rgba(176,146,94,.45);}
+.night .steps .done{color:#8a7a5c;}
+.night .steps .cur{color:var(--n-cinnabar);}
+
+/* 命龟：标题骨白、释文暖金；事类片选中如点亮的骨片 */
+.night .d-lead h3{color:var(--n-text);}
+.night .d-lead p{color:var(--n-sub);}
+.night .cat{border-color:var(--n-line);color:var(--n-text);}
+.night .cat.on{background:var(--n-text);color:var(--n-base);border-color:var(--n-text);}
+
+/* 按钮：主按钮朱砂祭印；发丝按钮暖金描边骨白字 */
+.night .btn.ink{background:var(--n-cinnabar);color:var(--n-text);}
+.night .btn.hair{color:var(--n-text);border-color:var(--n-line);}
+.night .d-foot{color:var(--n-faint);}
+
+/* 灼龟：甲框与刻痕收为暗金；暗角在玄漆上再沉一层 */
+.night .burn-stage{border-color:var(--n-line);}
+.night .burn-stage .tk{border-color:rgba(176,146,94,.8);}
+.night .burn-dim{background:radial-gradient(circle at 50% 47%,transparent 22%,
+  rgba(10,7,4,.25) 50%,rgba(8,6,3,.55) 78%,rgba(6,4,2,.72) 100%);}
+
+/* 裂纹三层在暗底提亮：辉光暖、朱砂烈、核心白炽（核心层不变） */
+.night .hc-glow{stroke:rgba(224,120,56,.55);}
+.night .hc-mid{stroke:var(--n-cinnabar);}
+.night .o-crack path{stroke:var(--n-cinnabar);}
+
+/* 火候环 / 占曰 */
+.night .heat-meter{background:rgba(176,146,94,.22);}
+.night .bsay-prefix{color:var(--n-sub);}
+.night .burn-say #burn-verdict-v{color:var(--n-cinnabar);}
+
+/* 卜辞 */
+.night .o-meta{color:var(--n-sub);}
+.night .o-grade{color:var(--n-cinnabar);}
+.night .o-text{color:var(--n-text);}
+
+/* 首页 · 问卜门户的夜祭预告：玄漆黑面板 */
+.night-door{background:#14100C;border-color:rgba(176,146,94,.55);}
+.night-door .d-text b{color:var(--n-text, #E9DCBE);}
+.night-door .d-text span{color:#A8936F;}
+.night-door::after{border-top-color:#B0925E;border-right-color:#B0925E;}
+
+/* 尊重减弱动效偏好 */
+@media (prefers-reduced-motion: reduce){
+  *,*::before,*::after{animation-duration:.01ms !important;animation-delay:0 !important;
+    transition-duration:.01ms !important;}
+}

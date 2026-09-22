@@ -1,0 +1,16 @@
+<!DOCTYPE html>
+<html lang="zh-CN"><head><meta charset="UTF-8"><title>甲骨放大</title>
+<style>
+body{margin:0;background:#F2ECDD;font-family:"Noto Serif SC",serif;padding:14px;}
+.row{display:flex;gap:10px;flex-wrap:wrap;}
+.cell{width:170px;height:170px;background:#fff8e8;border:1px solid #d8c59a;border-radius:8px;
+  display:flex;align-items:center;justify-content:center;position:relative;}
+.cell svg{width:74%;color:#33260f;}
+.cell span{position:absolute;left:8px;top:6px;font-size:15px;color:#8a7a5a;}
+</style></head><body>
+<div class="row" id="r1"></div>
+<script src="js/glyphs.js"></script>
+<script>
+document.getElementById('r1').innerHTML='日月山水雨目家马鹿休明河'.split('').map(c=>
+  `<div class="cell"><span>${c}</span>${GLYPHS_JIAGU[c]}</div>`).join('');
+</script></body></html>

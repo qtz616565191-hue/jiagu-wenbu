@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>甲骨问卜</title>
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+<div id="app">
+
+  <!-- 首页 · 双门户 -->
+  <section class="screen active" id="s-home">
+    <div class="home-art">
+      <img src="img/hero.jpg" alt="玄鸟与龟甲">
+    </div>
+    <div class="home-body">
+      <div class="htitle">甲骨问卜</div>
+      <div class="doors">
+        <div class="door night-door" id="door-divine">
+          <span class="dseal">卜</span>
+          <div class="d-text"><b>问卜</b><span>灼龟观兆，问一事之吉凶</span></div>
+        </div>
+        <div class="door" id="door-quiz">
+          <span class="dseal ink">字</span>
+          <div class="d-text"><b>识字</b><span>观形辨字，寻汉字三千年</span></div>
+        </div>
+      </div>
+      <div class="home-tools">
+        <span id="btn-sound">音效：开</span><i></i><span id="btn-about">关于</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- 问卜 · 命龟 -->
+  <section class="screen night" id="s-d-ask">
+    <div class="topline"><span class="go-home" id="ask-home">返回</span><span>问卜</span><span></span></div>
+    <div class="steps"><span class="cur">命龟</span><i></i><span>灼龟</span><i></i><span>卜辞</span></div>
+    <div class="d-lead">
+      <h3>述所问于龟</h3>
+      <p>殷人卜以决疑：先于心中默念所问之事，告于龟灵，谓之“命龟”。<br>
+      所问止于你心，不必说出。可择一事类，随卜辞刻记。</p>
+    </div>
+    <div class="d-cats" id="d-cats"></div>
+    <button class="btn ink" id="btn-charge">命 龟</button>
+    <div class="d-foot">只问吉凶，不算命</div>
+  </section>
+
+  <!-- 问卜 · 灼龟 -->
+  <section class="screen night" id="s-d-burn">
+    <div class="burn-dim" id="burn-dim"></div>
+    <div class="topline"><span id="burn-cat">问卜</span><span>灼龟</span><span></span></div>
+    <div class="steps"><span class="done">命龟</span><i></i><span class="cur">灼龟</span><i></i><span>卜辞</span></div>
+    <div class="q-prompt" id="burn-hint">按住龟甲，施以火炷</div>
+    <div class="burn-stage" id="burn-stage">
+      <span class="tk tl"></span><span class="tk tr"></span>
+      <span class="tk bl"></span><span class="tk br"></span>
+      <img class="burn-shell" src="img/shell-dark.jpg" alt="龟腹甲">
+      <div class="heatglow"></div>
+      <canvas class="burn-fx" id="burn-fx"></canvas>
+      <svg class="burn-crack" id="burn-crack" viewBox="0 0 200 200" preserveAspectRatio="none"></svg>
+      <i class="burn-flash" id="burn-flash"></i>
+    </div>
+    <div class="heat-meter" id="heat-meter"><i id="heat-fill"></i></div>
+    <div class="burn-say" id="burn-verdict">
+      <span class="bsay-prefix">占曰</span><span id="burn-verdict-v"></span>
+    </div>
+  </section>
+
+  <!-- 问卜 · 卜辞 -->
+  <section class="screen night" id="s-d-result">
+    <div class="topline"><span class="go-home" id="oracle-home">返回</span><span>甲骨问卜·卜辞</span><span></span></div>
+    <div class="steps"><span class="done">命龟</span><i></i><span class="done">灼龟</span><i></i><span class="cur">卜辞</span></div>
+    <div class="oracle-bg"><img src="img/oracle-bg.jpg" alt="卜辞底"></div>
+    <div class="oracle">
+      <i class="o-pad"></i>
+      <div class="o-meta" id="o-meta"></div>
+      <div class="o-stage">
+        <img src="img/shell-dark.jpg" alt="龟腹甲">
+        <svg class="o-crack" id="o-crack" viewBox="0 0 200 200" preserveAspectRatio="none"></svg>
+      </div>
+      <div class="o-grade" id="o-grade">吉</div>
+      <div class="o-text" id="o-text"></div>
+      <i class="o-pad bot"></i>
+    </div>
+    <div class="o-tools">
+      <button class="btn hair" id="btn-redivine">再占一次</button>
+      <button class="btn hair" id="btn-to-quiz">去识字</button>
+      <button class="btn ink" id="btn-save-oracle">保存卜辞</button>
+    </div>
+    <div class="d-foot">殷人卜以决疑。此为甲骨文化体验，非算命之断，吉凶在人。</div>
+  </section>
+
+  <!-- 答题 -->
+  <section class="screen" id="s-quiz">
+    <div class="topline"><span id="q-index">第 1 / 12 字</span><span id="q-score">已识 0 字</span></div>
+    <div class="progress"><i id="q-progress"></i></div>
+    <div class="q-prompt">观此甲骨之形，今日为何字？</div>
+    <div class="glyph-card" id="q-glyph">
+      <img class="shellbg" src="img/shell.jpg" alt="">
+      <span class="tk tl"></span><span class="tk tr"></span>
+      <span class="tk bl"></span><span class="tk br"></span>
+      <div class="glyph-slot" id="q-glyph-slot"></div>
+      <svg class="crack" viewBox="0 0 200 200" preserveAspectRatio="none">
+        <path d="M100 8 L92 52 L108 86 L88 120 L104 158 L96 194"/>
+        <path d="M92 52 L60 66 M108 86 L146 74 M88 120 L58 134 M104 158 L140 172"/>
+      </svg>
+    </div>
+    <div class="opts" id="q-opts"></div>
+  </section>
+
+  <!-- 拓印 · 擦刮 -->
+  <section class="screen" id="s-rub">
+    <div class="topline"><span id="rub-index">拓 · 字</span><span>亲手拓印</span></div>
+    <div class="progress"><i id="rub-progress"></i></div>
+    <div class="q-prompt" id="rub-hint">以指涂抹龟甲墨拓，显出甲骨之形</div>
+    <div class="rub-stage" id="rub-stage">
+      <div class="glyph-card rub-base">
+        <div class="glyph-slot" id="rub-glyph-slot"></div>
+      </div>
+      <canvas id="rub-canvas"></canvas>
+    </div>
+    <div class="opts" id="rub-opts" style="display:none;"></div>
+  </section>
+
+  <!-- 观变 · 字源时间轴 -->
+  <section class="screen" id="s-evo">
+    <div class="topline">
+      <span class="evo-back" id="evo-skip">跳过</span>
+      <span id="evo-era">商·甲骨</span>
+      <span></span>
+    </div>
+    <div class="evo-stage" id="evo-stage">
+      <div class="evo-glyph" id="evo-glyph"></div>
+      <div class="evo-char-name">「<span id="evo-char"></span>」字之变</div>
+    </div>
+    <div class="evo-note" id="evo-note"></div>
+    <div class="evo-rail" id="evo-rail"></div>
+    <button class="btn hair" id="evo-done">继续寻踪</button>
+  </section>
+
+  <!-- 结果 -->
+  <section class="screen" id="s-result">
+    <div class="result-card">
+      <img src="img/result.jpg" alt="">
+      <div class="r-label">甲骨问卜·识字</div>
+      <div class="r-grade" id="r-grade">大吉</div>
+      <div class="r-score">识得 <b id="r-score">0</b> / <span id="r-total">12</span> 字</div>
+      <div class="r-text" id="r-text"></div>
+    </div>
+    <div class="result-tools">
+      <button class="btn hair" id="btn-replay">再寻一次</button>
+      <button class="btn ink" id="btn-share">保存字鉴</button>
+    </div>
+    <div class="cross-link" id="btn-to-divine">去问卜</div>
+  </section>
+
+  <!-- 解说弹层（答题/拓印共用） -->
+  <div class="explain-mask" id="e-mask">
+    <div class="explain-sheet">
+      <h4 id="e-title">卜象吉</h4>
+      <p id="e-text"></p>
+      <div class="explain-actions">
+        <button class="btn hair" id="btn-evo">观字形之变</button>
+        <button class="btn ink" id="btn-next">继续</button>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<script src="js/glyphs.js"></script>
+<script src="js/data.js"></script>
+<script src="js/app.js"></script>
+<script src="js/divine.js"></script>
+</body>
+</html>

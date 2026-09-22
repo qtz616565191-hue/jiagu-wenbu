@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<title>字形总览</title>
+<style>
+body{margin:0;background:#F2ECDD;font-family:"Noto Serif SC",serif;padding:16px;}
+h3{font-size:14px;color:#6d5d40;margin:18px 0 8px;}
+.row{display:flex;gap:8px;flex-wrap:wrap;}
+.cell{width:110px;height:110px;background:#fff8e8;border:1px solid #d8c59a;border-radius:8px;
+  display:flex;align-items:center;justify-content:center;position:relative;}
+.cell svg{width:72%;color:#33260f;}
+.cell span{position:absolute;left:6px;top:4px;font-size:12px;color:#8a7a5a;}
+</style>
+</head>
+<body>
+<h3>甲骨（12）</h3><div class="row" id="r1"></div>
+<h3>金文（12）</h3><div class="row" id="r2"></div>
+<h3>小篆（12）</h3><div class="row" id="r3"></div>
+<script src="js/glyphs.js"></script>
+<script>
+const chars='日月山水雨目家马鹿休明河'.split('');
+[['r1',GLYPHS_JIAGU],['r2',GLYPHS_JINWEN],['r3',GLYPHS_XIAOZHUAN]].forEach(([id,set])=>{
+  document.getElementById(id).innerHTML=chars.map(c=>
+    `<div class="cell"><span>${c}</span>${set[c]}</div>`).join('');
+});
+</script>
+</body>
+</html>

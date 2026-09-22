@@ -1,0 +1,16 @@
+# 设计检视用截图，不参与线上站点
+shots-v1/
+shots-v2/
+shots-v3/
+
+# Seedream 原图（大文件，页面不加载）
+img-src/
+vid-src/
+
+# 误输出
+nul
+
+# 系统/临时
+Thumbs.db
+.DS_Store
+*.tmp
