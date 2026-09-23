@@ -27,32 +27,40 @@ function jpegSize(fp) {
 }
 
 (async () => {
-  // 排除 edge:// 内置页（sync 弹窗也是 page target）；about:blank renderer 会无视
-  // metrics override，所以先选 target、加载真实页面，再套模拟并实测确认
-  const pg = (await getJson('http://localhost:9222/json'))
-    .find(x => x.type === 'page' && (x.url === 'about:blank' || x.url.startsWith('http')));
-  if (!pg) throw new Error('没有可用的 page target');
-  const ws = new WebSocket(pg.webSocketDebuggerUrl);
-  await new Promise(r => ws.onopen = r);
-  let id = 0; const pend = new Map();
   const errors = [];
-  ws.onmessage = e => {
-    const m = JSON.parse(e.data);
-    if (m.id && pend.has(m.id)) { pend.get(m.id)(m.result); pend.delete(m.id); return; }
-    if (m.method === 'Runtime.exceptionThrown')
-      errors.push('exception: ' + (m.params.exceptionDetails.exception?.description || m.params.exceptionDetails.text));
-    if (m.method === 'Runtime.consoleAPICalled' && m.params.type === 'error')
-      errors.push('console.error: ' + m.params.args.map(a => a.value || a.description || '').join(' '));
-  };
-  const send = (method, params = {}) => new Promise(res => {
-    const mid = ++id; pend.set(mid, res); ws.send(JSON.stringify({ id: mid, method, params }));
-  });
-  const ev = e => send('Runtime.evaluate', { expression: e, awaitPromise: true, returnByValue: true }).then(r => {
-    if (r.result.exceptionDetails) errors.push('eval: ' + (r.result.exceptionDetails.exception?.description || r.result.exceptionDetails.text));
-    return r.result.value;
-  });
+  // 僵尸 target（崩溃 headless 残留，假 360x50 视口）和 edge:// 弹窗都不能用：
+  // 逐个 candidate 连接、加载真实页、套模拟、实测内宽，第一个通过的才是活 target
+  let ws = null, send, ev, go;
+  const candidates = (await getJson('http://localhost:9222/json'))
+    .filter(x => x.type === 'page' && (x.url === 'about:blank' || x.url.startsWith('http')));
+  for (const pg of candidates) {
+    const w = new WebSocket(pg.webSocketDebuggerUrl);
+    await new Promise(r => w.onopen = r);
+    let id = 0; const pend = new Map();
+    w.onmessage = e => {
+      const m = JSON.parse(e.data);
+      if (m.id && pend.has(m.id)) { pend.get(m.id)(m.result); pend.delete(m.id); return; }
+      if (m.method === 'Runtime.exceptionThrown')
+        errors.push('exception: ' + (m.params.exceptionDetails.exception?.description || m.params.exceptionDetails.text));
+      if (m.method === 'Runtime.consoleAPICalled' && m.params.type === 'error')
+        errors.push('console.error: ' + m.params.args.map(a => a.value || a.description || '').join(' '));
+    };
+    const s = (method, params = {}) => new Promise(res => {
+      const mid = ++id; pend.set(mid, res); w.send(JSON.stringify({ id: mid, method, params }));
+    });
+    const v = e => s('Runtime.evaluate', { expression: e, awaitPromise: true, returnByValue: true }).then(r => {
+      if (r.result.exceptionDetails) errors.push('eval: ' + (r.result.exceptionDetails.exception?.description || r.result.exceptionDetails.text));
+      return r.result.value;
+    });
+    const g = async (url, wait = 1200) => { await v(`location.href=${JSON.stringify(url)}`); await sleep(wait); };
+    await g('http://localhost:8765/?probe=' + Date.now(), 1000);
+    await s('Emulation.setDeviceMetricsOverride', { width: 320, height: 568, deviceScaleFactor: 2, mobile: true });
+    await sleep(300);
+    if (await v('innerWidth+"x"+innerHeight') === '320x568') { ws = w; send = s; ev = v; go = g; break; }
+    w.close(); errors.length = 0;
+  }
+  if (!ws) throw new Error('没有可用 target（全部是僵尸页），请重启 headless Edge');
   const activeId = () => ev(`[...document.querySelectorAll(".screen")].find(s=>s.classList.contains("active"))?.id||"-"`);
-  const go = async (url, wait = 1200) => { await ev(`location.href=${JSON.stringify(url)}`); await sleep(wait); };
 
   const SCREENS = ['s-home', 's-d-ask', 's-d-burn', 's-d-result', 's-quiz', 's-rub', 's-evo', 's-result'];
   const overflowAt = async (W, H) => {
