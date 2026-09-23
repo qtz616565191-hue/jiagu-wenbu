@@ -4,8 +4,23 @@
   const $ = (id) => document.getElementById(id);
   const ALL = ['s-home', 's-d-ask', 's-d-burn', 's-d-result',
     's-quiz', 's-rub', 's-evo', 's-result'];
+  // 转场：裂纹扫过 0.4s —— 自中轴灼开，160ms 中点换页，新屏 screenIn 自裂纹后浮现
+  let swapTimer = null, fxTimer = null;
+  const reducedMotion = () => window.matchMedia('(prefers-reduced-motion: reduce)').matches;
   function show(id) {
-    ALL.forEach(s => $(s).classList.toggle('active', s === id));
+    clearTimeout(swapTimer); clearTimeout(fxTimer);
+    const cur = ALL.map($).find(s => s.classList.contains('active'));
+    if (!cur || cur.id === id || reducedMotion()) {
+      ALL.forEach(s => $(s).classList.toggle('active', s === id));
+      return;
+    }
+    const fx = $('crack-fx');
+    fx.classList.remove('go'); void fx.offsetWidth; fx.classList.add('go'); // 强制重启动画
+    swapTimer = setTimeout(() => {
+      swapTimer = null;
+      ALL.forEach(s => $(s).classList.toggle('active', s === id));
+    }, 160);
+    fxTimer = setTimeout(() => { fxTimer = null; fx.classList.remove('go'); }, 400);
   }
 
   /* ---------- 事类（源自甲骨卜辞：出入、行止、会见、抉择等） ---------- */
@@ -221,6 +236,11 @@
     fxCv.height = Math.round(H2 * dpr);
     fx.setTransform(dpr, 0, 0, dpr, 0, 0);
   }
+  // 裂纹转场把屏幕激活推迟 160ms：须等 section 真正显示、画布有尺寸再量
+  function sizeFxWhenReady() {
+    if ($('s-d-burn').classList.contains('active') && fxCv.clientWidth > 0) { sizeFx(); return; }
+    requestAnimationFrame(sizeFxWhenReady);
+  }
 
   function spawnEmber() {
     parts.push({
@@ -331,13 +351,13 @@
     $('heat-meter').style.opacity = '';
     clearFx();
     show('s-d-burn');
-    sizeFx(); // 须在 section 显示后取尺寸，否则 clientWidth 为 0
+    sizeFxWhenReady();
   }
 
   function startHeat(e) {
     if (fired) return;
     e.preventDefault();
-    stage.setPointerCapture && stage.setPointerCapture(e.pointerId);
+    try { stage.setPointerCapture && stage.setPointerCapture(e.pointerId); } catch {}
     heating = true;
     $('s-d-burn').classList.add('heating');
     $('burn-hint').textContent = '火炷渐炽，勿松手……';
@@ -495,10 +515,17 @@
     x.fillStyle = '#A8936F'; x.font = `600 22px ${FONT}`;
     x.fillText('甲骨问卜', W / 2, 1245);
 
-    const a = document.createElement('a');
-    a.download = '甲骨问卜-卜辞.jpg';
-    a.href = cv.toDataURL('image/jpeg', .92);
-    a.click();
+    // Blob URL 而非 dataURL：headless/部分安卓 WebView 下 dataURL 下载会在
+    // downloadWillBegin 后被静默取消；挂入 DOM 以兼容旧浏览器
+    cv.toBlob(b => {
+      const a = document.createElement('a');
+      a.download = '甲骨问卜-卜辞.jpg';
+      a.href = URL.createObjectURL(b);
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      setTimeout(() => URL.revokeObjectURL(a.href), 4000);
+    }, 'image/jpeg', .92);
   }
 
   /* ---------- 识字收藏卡（750×1334：2×6 甲骨格，答错置灰，长按保存） ---------- */

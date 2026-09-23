@@ -12,7 +12,7 @@
 
   // 拓印插入点：答完第 4、9 题后，拓印刚答对的那个字（12 题版节奏）
   const RUB_AFTER = { 3: true, 8: true };
-  const RUB_DONE_PCT = 0.55;   // 露出过此比例即视为拓成
+  const RUB_DONE_PCT = 0.5;    // 中央字形区域露出过半即视为拓成
 
   // Fisher–Yates 洗牌
   function shuffle(arr) {
@@ -24,8 +24,23 @@
     return a;
   }
 
+  // 转场：裂纹扫过 0.4s —— 自中轴灼开，160ms 中点换页，新屏 screenIn 自裂纹后浮现
+  let swapTimer = null, fxTimer = null;
+  const reducedMotion = () => window.matchMedia('(prefers-reduced-motion: reduce)').matches;
   function show(id) {
-    screens.forEach(s => $(s).classList.toggle('active', s === id));
+    clearTimeout(swapTimer); clearTimeout(fxTimer);
+    const cur = screens.map($).find(s => s.classList.contains('active'));
+    if (!cur || cur.id === id || reducedMotion()) {
+      screens.forEach(s => $(s).classList.toggle('active', s === id));
+      return;
+    }
+    const fx = $('crack-fx');
+    fx.classList.remove('go'); void fx.offsetWidth; fx.classList.add('go'); // 强制重启动画
+    swapTimer = setTimeout(() => {
+      swapTimer = null;
+      screens.forEach(s => $(s).classList.toggle('active', s === id));
+    }, 160);
+    fxTimer = setTimeout(() => { fxTimer = null; fx.classList.remove('go'); }, 400);
   }
 
   /* ---------- 音效：WebAudio 程序化合成（零素材，首次触摸解锁） ---------- */
@@ -170,6 +185,11 @@
 
   function initRubCanvas() {
     const cv = $('rub-canvas'), stage = $('rub-stage');
+    // 裂纹转场把屏幕激活推迟 160ms：此时 clientHeight 为 0，逐帧等到有尺寸
+    if (!stage.clientHeight || !$('s-rub').classList.contains('active')) {
+      requestAnimationFrame(initRubCanvas);
+      return;
+    }
     const dpr = Math.min(window.devicePixelRatio || 1, 2);
     const w = stage.clientWidth, h = stage.clientHeight;
     cv.width = w * dpr; cv.height = h * dpr;
@@ -179,24 +199,19 @@
     ctx.globalCompositeOperation = 'source-over';
     ctx.fillStyle = '#1F1A14';
     ctx.fillRect(0, 0, w, h);
-    // 拓片颗粒
+    // 拓片颗粒（去框后不再加边缘晕影，墨层与页面墨底融为一体）
     for (let i = 0; i < w * h / 80; i++) {
       ctx.fillStyle = `rgba(247,241,225,${Math.random() * 0.13})`;
       ctx.fillRect(Math.random() * w, Math.random() * h, 1.6, 1.6);
     }
-    // 边缘受光（略暗）
-    const grad = ctx.createRadialGradient(w / 2, h / 2, w * 0.2, w / 2, h / 2, w * 0.72);
-    grad.addColorStop(0, 'rgba(0,0,0,0)');
-    grad.addColorStop(1, 'rgba(0,0,0,.35)');
-    ctx.fillStyle = grad;
-    ctx.fillRect(0, 0, w, h);
     ctx.globalCompositeOperation = 'destination-out';
 
     let drawing = false, last = null, lastVib = 0;
     const pos = e => { const r = cv.getBoundingClientRect();
       return { x: e.clientX - r.left, y: e.clientY - r.top }; };
     function start(e) { if (rubDone) return; drawing = true; last = pos(e);
-      cv.setPointerCapture && cv.setPointerCapture(e.pointerId); scratch(last); e.preventDefault(); }
+      try { cv.setPointerCapture && cv.setPointerCapture(e.pointerId); } catch {}
+      scratch(last); e.preventDefault(); }
     function move(e) {
       if (!drawing || rubDone) return;
       const p = pos(e);
@@ -220,16 +235,19 @@
 
   function checkReveal(w, h, dpr) {
     const cv = $('rub-canvas'), ctx = cv.getContext('2d');
-    const step = 10, data = ctx.getImageData(0, 0, w * dpr, h * dpr).data;
+    const data = ctx.getImageData(0, 0, w * dpr, h * dpr).data;
+    // 只统计中央字形区域：真人只会围着字形擦，按全幅 56vh 画布计数永远到不了阈值
+    const step = 10;
+    const x0 = Math.round(w * .18), x1 = Math.round(w * .82);
+    const y0 = Math.round(h * .20), y1 = Math.round(h * .80);
     let cleared = 0, total = 0;
-    for (let y = 0; y < h; y += step)
-      for (let x = 0; x < w; x += step) {
+    for (let y = y0; y < y1; y += step)
+      for (let x = x0; x < x1; x += step) {
         total++;
         if (data[(y * dpr * w * dpr + x * dpr) * 4 + 3] < 40) cleared++;
       }
     const pct = cleared / total;
-    // 前 50% 露出：进度缓爬（0→45%）；越过 50%：进度陡涨（45→100%），越拓越顺
-    const shown = pct <= .5 ? pct * 90 : 45 + (pct - .5) / (RUB_DONE_PCT - .5) * 55;
+    const shown = Math.min(1, pct / RUB_DONE_PCT) * 100;
     if (pct > 0.05) $('rub-hint').textContent = `拓印中… ${Math.min(99, Math.round(shown))}%`;
     if (pct >= RUB_DONE_PCT && !rubDone) revealRub();
   }
@@ -302,6 +320,7 @@
     document.querySelectorAll('.evo-cell').forEach(el => {
       const d = +el.dataset.i - evoIdx;
       el.style.opacity = d === 0 ? 1 : Math.abs(d) === 1 ? .3 : 0;
+      el.classList.toggle('cur', d === 0);
       el.style.zIndex = 3 - Math.min(Math.abs(d), 2);
       el.firstElementChild.style.setProperty('--x', d * EVO_X + 'px');
       el.firstElementChild.style.setProperty('--s', d === 0 ? 1 : .7);
@@ -324,9 +343,11 @@
     layoutEvo();
   }
   function buildRail() {
-    $('evo-rail').innerHTML = EVO_LABELS.map((l, i) =>
-      `<div class="evo-node" data-i="${i}"><i>${i + 1}</i><span>${l.replace(/^.+·/, '')}</span></div>`
-    ).join('');
+    $('evo-rail').innerHTML = '<span class="rail-bird" aria-hidden="true"></span>'
+      + EVO_LABELS.map((l, i) =>
+        `<div class="evo-node" data-i="${i}"><i>${i + 1}</i><span>${l.replace(/^.+·/, '')}</span></div>`
+      ).join('')
+      + '<span class="rail-bird" aria-hidden="true"></span>';
     $('evo-rail').querySelectorAll('.evo-node').forEach(n =>
       n.onclick = () => { evoIdx = +n.dataset.i; layoutEvo(); SFX.open(); });
   }
@@ -369,7 +390,9 @@
   function result() {
     $('q-progress').style.width = '100%';
     const g = grade(score, QUESTIONS.length);
-    $('r-grade').textContent = g.title;
+    // 巨字逐字显现（竖向叠加），错峰延迟
+    $('r-grade').innerHTML = [...g.title].map((c, i) =>
+      `<span style="animation-delay:${(0.12 + i * 0.3).toFixed(2)}s">${c}</span>`).join('');
     $('r-score').textContent = score;
     $('r-total').textContent = QUESTIONS.length;
     $('r-text').textContent = g.text;

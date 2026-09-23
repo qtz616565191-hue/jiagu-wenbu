@@ -98,10 +98,10 @@
     <div class="topline"><span id="q-index">第 1 / 12 字</span><span id="q-score">已识 0 字</span></div>
     <div class="progress"><i id="q-progress"></i></div>
     <div class="q-prompt">观此甲骨之形，今日为何字？</div>
+    <span class="qbird tl" aria-hidden="true"></span>
+    <span class="qbird br" aria-hidden="true"></span>
     <div class="glyph-card" id="q-glyph">
-      <img class="shellbg" src="img/shell.jpg" alt="">
-      <span class="tk tl"></span><span class="tk tr"></span>
-      <span class="tk bl"></span><span class="tk br"></span>
+      <img class="shellbg" src="img/shell-pl.png" alt="">
       <div class="glyph-slot" id="q-glyph-slot"></div>
       <span class="kaishu" id="q-kaishu"></span>
       <svg class="crack" viewBox="0 0 200 200" preserveAspectRatio="none">
@@ -119,6 +119,7 @@
     <div class="progress"><i id="rub-progress"></i></div>
     <div class="q-prompt" id="rub-hint">以指涂抹龟甲墨拓，显出甲骨之形</div>
     <div class="rub-stage" id="rub-stage">
+      <span class="rub-bird" aria-hidden="true"></span>
       <div class="glyph-card rub-base">
         <div class="glyph-slot" id="rub-glyph-slot"></div>
       </div>
@@ -145,13 +146,21 @@
 
   <!-- 结果 -->
   <section class="screen" id="s-result">
+    <span class="result-bird" aria-hidden="true"></span>
     <div class="result-card">
       <img src="img/result.jpg" alt="">
       <div class="r-label">甲骨问卜·识字</div>
-      <div class="r-grade" id="r-grade">大吉</div>
       <div class="r-score">识得 <b id="r-score">0</b> / <span id="r-total">12</span> 字</div>
+      <div class="r-grade" id="r-grade"></div>
       <div class="r-text" id="r-text"></div>
     </div>
+    <!-- 巨字刻痕：位移滤镜制造刀凿毛边（不支持时字仍正常显示） -->
+    <svg width="0" height="0" style="position:absolute" aria-hidden="true">
+      <filter id="carvedge">
+        <feTurbulence type="fractalNoise" baseFrequency="0.035 0.09" numOctaves="2" seed="9"/>
+        <feDisplacementMap in="SourceGraphic" scale="7"/>
+      </filter>
+    </svg>
     <div class="result-tools">
       <button class="btn hair" id="btn-replay">再寻一次</button>
       <button class="btn ink" id="btn-share">保存字鉴</button>
@@ -178,6 +187,28 @@
       <a id="card-link" download="甲骨问卜-字鉴.jpg"><img id="card-img" alt="识字字鉴"></a>
       <span class="card-close" id="card-close">收起</span>
     </div>
+  </div>
+
+  <!-- 裂纹扫过转场：自中轴向上下灼开，0.4s；中点换页，新页自裂纹后浮现 -->
+  <div class="crack-fx" id="crack-fx" aria-hidden="true">
+    <svg viewBox="0 0 200 400" preserveAspectRatio="none">
+      <path class="cf-glow" d="M100 200 L96 168 L105 132 L93 96 L104 56 L98 20 L100 -8"/>
+      <path class="cf-glow" d="M100 200 L104 234 L94 270 L107 308 L95 346 L102 380 L100 408"/>
+      <path class="cf-main" d="M100 200 L96 168 L105 132 L93 96 L104 56 L98 20 L100 -8"/>
+      <path class="cf-main" d="M100 200 L104 234 L94 270 L107 308 L95 346 L102 380 L100 408"/>
+      <path class="cf-core" d="M100 200 L96 168 L105 132 L93 96 L104 56 L98 20 L100 -8"/>
+      <path class="cf-core" d="M100 200 L104 234 L94 270 L107 308 L95 346 L102 380 L100 408"/>
+      <!-- 短枝：随主纹同时灼开 -->
+      <path class="cf-glow" d="M96 168 L78 156"/>
+      <path class="cf-glow" d="M93 96 L74 102"/>
+      <path class="cf-glow" d="M104 234 L124 224"/>
+      <path class="cf-glow" d="M107 308 L128 316"/>
+      <path class="cf-main" d="M96 168 L78 156"/>
+      <path class="cf-main" d="M93 96 L74 102"/>
+      <path class="cf-main" d="M104 234 L124 224"/>
+      <path class="cf-main" d="M107 308 L128 316"/>
+    </svg>
+    <i class="cf-flash"></i>
   </div>
 
 </div>

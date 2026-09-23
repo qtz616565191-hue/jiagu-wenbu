@@ -35,3 +35,6 @@ process-lishu.js
 wm-analysis.json
 wm-template-raw.json
 wm-test.gif
+
+# QA 测试产物
+qa-dl/
