@@ -218,17 +218,8 @@ body{
 .cross-link{text-align:center;font-size:13px;color:#a08a5e;margin-top:18px;cursor:pointer;
   letter-spacing:.15em;}
 
-/* 答题 / 拓印：商代青铜式玄鸟纹底（Seedream 5.0 Pro 生成，手工色阶处理；
-   取法妇好墓"好"汽柱甑颈部小鸟纹：闭钩喙/圆眼/多齿冠/短翅/尾分二翎；
-   玄鸟疏落，只有玄鸟，无碎片/裂纹/云雷纹，无文字）
-   答题=白底图 multiply 32%；拓印=反转黑底图 screen 24%，骨白隐纹 */
-#s-quiz::before,#s-rub::before{
-  content:"";position:absolute;inset:0;pointer-events:none;z-index:0;
-  background-size:cover;background-position:center;}
-#s-quiz::before{background-image:url("../img/bird-pattern.jpg");
-  mix-blend-mode:multiply;opacity:.32;}
-#s-rub::before{background-image:url("../img/bird-pattern-dark.jpg");
-  mix-blend-mode:screen;opacity:.24;}
+/* 答题 / 拓印底纹：原满铺立鸟纹与角落飞玄鸟母题重复、显卡通，已弃用，
+   改为纯纸/纯墨底 + 单只玄鸟点景（.qbird / .rub-bird），让龟甲与字做主角 */
 
 /* 任务2：玄鸟贯穿全程 —— CSS mask 引用切图（bird-fly 飞玄鸟 / bird-line 站立青铜鸟），
    颜色随 background-color：纸页用 ink/gold，拓印墨页用骨白；装饰而已，不抢视线 */

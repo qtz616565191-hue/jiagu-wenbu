@@ -27,20 +27,13 @@ function jpegSize(fp) {
 }
 
 (async () => {
-  // 挑选真正挂在浏览器窗口上的 page target（headless 崩溃残留的孤儿 target
-  // 不支持 Emulation.setDeviceMetricsOverride，且视口是 360x50 假象）
-  let ws = null;
-  for (const pg of (await getJson('http://localhost:9222/json')).filter(x => x.type === 'page')) {
-    const candidate = new WebSocket(pg.webSocketDebuggerUrl);
-    await new Promise(r => candidate.onopen = r);
-    let cid = 0; const cp = new Map();
-    candidate.onmessage = e => { const m = JSON.parse(e.data); if (m.id && cp.has(m.id)) { cp.get(m.id)(m); cp.delete(m.id); } };
-    const csend = (method, params = {}) => new Promise(res => { const i = ++cid; cp.set(i, res); candidate.send(JSON.stringify({ id: i, method, params })); });
-    const r = await csend('Emulation.setDeviceMetricsOverride', { width: 390, height: 844, deviceScaleFactor: 2, mobile: true });
-    if (!r.error) { ws = candidate; break; }
-    candidate.close();
-  }
-  if (!ws) throw new Error('没有找到支持 metrics override 的 page target');
+  // 排除 edge:// 内置页（sync 弹窗也是 page target）；about:blank renderer 会无视
+  // metrics override，所以先选 target、加载真实页面，再套模拟并实测确认
+  const pg = (await getJson('http://localhost:9222/json'))
+    .find(x => x.type === 'page' && (x.url === 'about:blank' || x.url.startsWith('http')));
+  if (!pg) throw new Error('没有可用的 page target');
+  const ws = new WebSocket(pg.webSocketDebuggerUrl);
+  await new Promise(r => ws.onopen = r);
   let id = 0; const pend = new Map();
   const errors = [];
   ws.onmessage = e => {
@@ -63,8 +56,11 @@ function jpegSize(fp) {
 
   const SCREENS = ['s-home', 's-d-ask', 's-d-burn', 's-d-result', 's-quiz', 's-rub', 's-evo', 's-result'];
   const overflowAt = async (W, H) => {
+    await go('http://localhost:8765/?qa=' + Date.now(), 800);
     await send('Emulation.setDeviceMetricsOverride', { width: W, height: H, deviceScaleFactor: 2, mobile: true });
-    await go('http://localhost:8765/?qa=' + Date.now(), 1000);
+    await sleep(200);
+    const vp = await ev('innerWidth + "x" + innerHeight');
+    if (vp !== `${W}x${H}`) throw new Error(`viewport ${vp}, 期望 ${W}x${H}`);
     const bad = [];
     for (const x of SCREENS) {
       await ev(`document.querySelectorAll(".screen.active").forEach(s=>s.classList.remove("active"));document.getElementById(${JSON.stringify(x)}).classList.add("active")`);
